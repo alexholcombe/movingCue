@@ -1,4 +1,3 @@
-Collaboration with Arni Kristjansson
 ==============
 
 ![alt text](KristjanssonNakayamaMackeben_stim.png
@@ -24,6 +23,11 @@ Contrast some conditions
 * The cue provides a frame itself to judge the offset of the target relative to. Esp. because currently the cue and thin wedge are more similar in brightness than are the thick wedge and thin wedge. So the cue "physically" helps boost performance, not just attentionally. To avoid, I guess would have to jitter its exact location.
 
 [Movie of trial](../../exportedImages/out.webm)
+
+
+## People
+
+Originally a collaboration with Arni Kristjansson, this his student who fell pregnant, then Ingrid's honours thesis, then Emily Crowe.
 
 ## meeting with Arni
 
