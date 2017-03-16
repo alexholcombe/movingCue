@@ -45,7 +45,7 @@ radii=[25]   #Need to encode as array for those experiments wherein more than on
 respRadius=radii[0] #deg
 refreshRate= 85 #85 #set to the framerate of the monitor
 useClock = False #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=1; #show in small window (0) or full screen (1) 
+fullscr=True; #show in small window (0) or full screen (1) 
 scrn=0 #which screen to display the stimuli. 0 is home screen, 1 is second screen
 # create a dialog from dictionary 
 infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
