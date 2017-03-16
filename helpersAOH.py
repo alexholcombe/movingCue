@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 __author__ = """Alex "O." Holcombe""" ## double-quotes will be silently removed, single quotes will be left, eg, O'Connor
 import numpy as np
 import itertools #to calculate all subsets
@@ -6,6 +7,8 @@ from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil
 import time, sys, platform, os, StringIO, gc
 from psychopy import visual, core
+import random 
+#If you run this code stand-alone, it will do a demo of the basic stimulus it is designed to provide
 
 #BEGIN helper functions from primes.py
 def gcd(a,b): 
@@ -102,7 +105,7 @@ def constructRingsAsGratings(myWin,numRings,radii,ringRadialMaskEachRing,numObje
     patchSizeTexture = round(patchSizeTexture) #best is odd number, even space on either size
     patchFlankSize = (segmentSizeTexture-patchSizeTexture)/2.
     patchAngleActual = patchSizeTexture / gratingTexPix * oneCycleAngle
-    if abs(patchAngleActual - patchAngle) > .04:
+    if abs(patchAngleActual - patchAngle) > .01:
         msg = 'Desired patchAngle = '+str(patchAngle)+' but closest can get with '+str(gratingTexPix)+' gratingTexPix is '+str(patchAngleActual); 
         ppLog.warn(msg)
     
@@ -169,8 +172,8 @@ def constructRingsAsGratings(myWin,numRings,radii,ringRadialMaskEachRing,numObje
     ######### End constructRingAsGrating ###########################################################
 #########################################
 
-def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMask,visibleWedge,numObjects,patchAngleThick,patchAngleThin,bgColor,
-                                            thickWedgeColor,thinWedgeColor,targetAngleOffset,gratingTexPix,cueColor,objToCue,ppLog):
+def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskTarget,cueRadialMask,visibleWedge,numObjects,patchAngleThick,patchAngleThin,bgColor,
+                                            thickWedgeColor,thinWedgeColor,targetAngleOffset,targetRadialOffset,gratingTexPix,cueColor,objToCue,ppLog):
     #Construct a grating formed of the colors in order of stimColorIdxsOrder
     #Also construct a similar cueRing grating with same colors, but one blob potentially highlighted. 
     #cueRing Has different spacing than ringRadial, not sure why, I think because calculations tend to be off as it's 
@@ -192,34 +195,49 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMa
             print(msg); ppLog.error(msg)
         patchSizeTexture = patchAngle*1.0/oneCycleAngle *gratingTexPix
         patchSizeTexture = round(patchSizeTexture) #best is odd number, even space on either size
-        patchFlankSize = (segmentSizeTexture-patchSizeTexture)/2. #this area will be drawn in bgColor
+        patchFlankSize =int( (segmentSizeTexture-patchSizeTexture)/2. )#this area will be drawn in bgColor
         patchAngleActual = patchSizeTexture*1.0 / gratingTexPix * oneCycleAngle
-        if abs(patchAngleActual - patchAngle) > .04:
+        if abs(patchAngleActual - patchAngle) > .01:
             msg = 'Desired patchAngle = '+str(patchAngle)+' but closest can get with '+str(gratingTexPix)+' gratingTexPix is '+str(patchAngleActual); 
             ppLog.warn(msg)
         return segmentSizeTexture, patchSizeTexture, patchFlankSize
-    
+ 
     #thick wedges. Create texture for visual.radialStim
     segmentSizeTexture, patchSizeTexture, patchFlankSize = patchSizeForTexture(segmentAngle, patchAngleThick, oneCycleAngle, gratingTexPix)
-    start = round( 0 ) #identify starting texture position for this segment
-    end = round( start + segmentSizeTexture ) #don't round until after do addition, otherwise can fall short
+    start = 0 #identify starting texture position for this segment
+    end = int( round( start + segmentSizeTexture ) ) #don't round until after do addition, otherwise can fall short
+    angRes = 200 #100 is default. I have not seen an artifact at present when set to 100, two things drawn don't overlap exactly
+
     #First draw the entire segment in patchColr, then erase sides (flankers) leaving only the patchAngle
     ringTex[:, start:end, :] = thickWedgeColor[:]
     #spaces in between objects are termed the flanks, should be bgColor,
     ringTex[:, start:start+patchFlankSize, :] = bgColor[:]  #one flank
     ringTex[:, end-1-patchFlankSize:end, :] = bgColor[:]  #other flank
-    
-    #thin wedges. Create texture for visual.radialStim
-    segmentSizeTexture, thinWedgeSizeTexture, patchFlankSize = patchSizeForTexture(segmentAngle, patchAngleThin, oneCycleAngle, gratingTexPix)
-    #First draw the entire segment in patchColr, then erase sides (flankers) leaving only the patchAngle
-    start = patchFlankSize #identify starting texture position for this segment
-    end = round( start + thinWedgeSizeTexture ) #don't round until after do addition, otherwise can fall short
-    ringTex[:, start:end, :] = thinWedgeColor[:]
 
-    angRes = 200 #100 is default. I have not seen an artifact at present when set to 100, two things drawn don't overlap exactly
-    ringRadial= visual.RadialStim(myWin, tex=ringTex, color=[1,1,1],size=radius,#ringTex is the actual colored pattern. radial grating used to make it an annulus
+    #thin wedges. Create texture for visual.radialStim
+    segmentSizeTexture, thinWedgeSizeTexture, patchFlankSizeThinWedge = patchSizeForTexture(segmentAngle, patchAngleThin, oneCycleAngle, gratingTexPix)
+
+    #Instead of drawing the red and undisplaced blue with the same call to radialStim,
+    #We will draw the red with one call to radialStim, then the thinner blue sliver on top, using radialMask so it's only the sliver and leaves the
+    #remainder of the red showing.
+    #First draw the thick red contexts thickWedges
+    ringRadialThickWedges= visual.RadialStim(myWin, tex=ringTex, color=[1,1,1],size=radius,#ringTex is the actual colored pattern. radial grating used to make it an annulus
             visibleWedge=visibleWedge,
             mask=radialMask, # this is a 1-D mask masking the centre, to create an annulus
+            radialCycles=0, angularCycles=numObjects,
+            angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
+
+    #thinWedge, the usually-blue target
+    #First draw the entire segment in thinWedgeColor, then erase sides (flankers) leaving only the patchAngle (wedge angle)
+    thinRingTex = np.zeros([gratingTexPix,gratingTexPix,3])+bgColor[0]  #start with all channels in all locs = bgColor
+    thinRingTex[:, start:end, :] = thinWedgeColor[:]
+    #spaces in between objects are termed the flanks, should be bgColor,
+    thinRingTex[:, start:start+patchFlankSize, :] = bgColor[:]  #one flank
+    thinRingTex[:, end-1-patchFlankSize:end, :] = bgColor[:]  #other flank    
+
+    ringRadialThinWedges= visual.RadialStim(myWin, tex=thinRingTex, color=[1,1,1],size=radius,#ringTex is the actual colored pattern. radial grating used to make it an annulus
+            visibleWedge=visibleWedge,
+            mask=radialMaskTarget, # this is a 1-D mask masking the centre, to create an annulus
             radialCycles=0, angularCycles=numObjects,
             angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
 
@@ -228,29 +246,82 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMa
     #angularPhase = 
     #I need to not show the part of the thick wedge that will be displaced, while showing enough of thick wedge to overdraw previous location of thin wedge
     targetCorrectedForRingReversal = numObjects-1 - objToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
-    visibleAngleStart = targetCorrectedForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2
-    visibleAngleEnd = visibleAngleStart + patchAngleThick
+    kludgeFactor = 5
+    visibleAngleStart = targetCorrectedForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2 - kludgeFactor
+    visibleAngleEnd = (visibleAngleStart+kludgeFactor) + patchAngleThick + kludgeFactor  
     #print('targetCorrectedForRingReversal = ',targetCorrectedForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
     if targetAngleOffset >= 0:
         visibleAngleEnd -= targetAngleOffset #don't show the part of the thick wedge that would be displaced
     else: #shifted the other way, towards the start, so spillover on that side needs to be avoided by not drawing it
         visibleAngleStart -= targetAngleOffset
     
+    #DRAW THE TARGET RING, like the above ringRadial except displaced
     #Below call is identical to ringRadial except ori
-    targetRadial= visual.RadialStim(myWin, tex=ringTex, color=[1,1,1],size=radius,#ringTex is the actual colored pattern. radial grating used to make it an annulus
+    #set visibleWedge so it only highlights a single thick wedge
+    targetRadial= visual.RadialStim(myWin, tex=thinRingTex, color=[1,1,1],size=radius+targetRadialOffset,#ringTex is the actual colored pattern. radial grating used to make it an annulus
             visibleWedge=[visibleAngleStart,visibleAngleEnd],
-            ori = targetAngleOffset,
+            ori = targetAngleOffset, #Always zero in the new version where the task is to judge the radial offset of the blue thin wedge
+            mask=radialMaskTarget, # this is a 1-D mask masking the centre, to create an annulus
+            radialCycles=0, angularCycles=numObjects,
+            angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
+
+    #MAKE A COPY of the thick red ring to draw over undisplaced blue
+    ringRadialThickWedgesCopy= visual.RadialStim(myWin, tex=ringTex, color=[1,1,1],size=radius,#ringTex is the actual colored pattern. radial grating used to make it an annulus
+            visibleWedge=  (visibleAngleStart,visibleAngleEnd),
             mask=radialMask, # this is a 1-D mask masking the centre, to create an annulus
             radialCycles=0, angularCycles=numObjects,
             angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
             
-    #Creating cue texture
+    #Draw lines (alternative target)
+    lines=[]
+    #calculate estimated eccentricity that grating target would be at, if were using grating targets
+    #Find the center of the ones in radialMaskTarget, multiply by grating radius
+    oneIndices = np.where(radialMaskTarget==1)[0]
+    oneIndexMean = np.mean(oneIndices)
+    proportnOfRadius =  oneIndexMean / len(radialMaskTarget)
+    proportnOfRadius += 0.5 * 1/len(radialMaskTarget) #Because grating mask doesn't work with centering, rather it's the beginning or something so need to add to get to center of wedge
+    eccentricity = proportnOfRadius* radius
+    eccentricity = eccentricity / 1.97 #Don't know why need to divide by almost 2
+    #print("oneIndexMean = ", oneIndexMean, "proportnOfRadius = ", proportnOfRadius, "eccentricity = ", eccentricity)
+    #Calculate appropriate line width in deg
+    wedgeThicknessFraction = len( np.where(radialMask)[0] )  *    1.0 / len(radialMask)
+    wedgeThickness =  wedgeThicknessFraction*radius/2
+    targeti = (targetCorrectedForRingReversal-1)  % numObjects   #dont know why have to subtract 1. Then have to mod numObjects so negative number gets turned into positive
+    targetFillColors = np.array([[.9,.9,.9],[-.8,-.8,-.8]]) #  [-.3,-.3,-.3]
+    for i in xrange(0,numObjects):
+       lineHeight =  wedgeThickness * 3.0# *1.0 
+       lineWidth = lineHeight / 4
+       angleDeg = -i/numObjects*360  #Negative because I think gratings are drawn in the opposite direction
+       tangentialOrientation = i/numObjects*360
+       if __name__ != "__main__": #not self-test
+            halfAngle = 360/numObjects/2 #For some reason target is offset by half the distance between two objects, even though that doesn't happen in helpersAOH self-test
+            angleDeg += halfAngle
+            tangentialOrientation -= halfAngle
+       x = cos(angleDeg*pi/180) * eccentricity
+       y = sin(angleDeg*pi/180) * eccentricity
+       lineColor = targetFillColors[0]
+       if i == targeti:
+            orientation = tangentialOrientation
+            if targetRadialOffset<0: #it's always one of two values, a negative one and a positive one
+                #orientation = tangentialOrientation + 90
+                lineColor = targetFillColors[1] #opposite color
+       else:
+            #orientation = tangentialOrientation + random.randint(0,1)*90
+            lineColor = targetFillColors[ random.randint(0,1) ]
+       #if orientation==tangentialOrientation: #make bigger because harder to see
+       #     lineHeight *= 1.4 #for tangential, make longer
+       #else: lineHeight *=.8
+       #print("Drawing line ",i," at x=",x, " y=", y, "targetCorrectedForRingReversal=", targetCorrectedForRingReversal )
+       #thisLine = visual.Rect(myWin, width=lineWidth, height=lineHeight, pos=(x,y), ori=orientation, fillColor=lineColor, lineColor=None, autoLog=autoLogging)
+       thisLine = visual.Circle(myWin, radius=lineWidth, pos=(x,y), fillColor=lineColor, lineColor=None, autoLog=autoLogging)
+       lines.append(thisLine)
+    #CREATING CUE TEXTURE
     #Both inner and outer cue arcs can be drawn in one go via a radial mask
     #use visibleWedge so it only highlights a single thick wedge
     #draw texture for cueRing
-    start = round( 0 ) #identify starting texture position for this segment
-    start = round( start+patchFlankSize )
-    end = round(start + segmentSizeTexture - patchFlankSize) #don't round until after do addition, otherwise can fall short
+    start = 0 #identify starting texture position for this segment
+    start = int( round( start+patchFlankSize ) )
+    end = int( round(start + segmentSizeTexture - patchFlankSize) )#don't round until after do addition, otherwise can fall short
     cueTex[:, start:end, :] = cueColor[:]
     #Actually because I'm only showing a tiny sliver via visibleAngle, could color the whole thing
     cueTex[:, :, :] = cueColor[:]
@@ -268,7 +339,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMa
                     mask = cueRadialMask, radialCycles=0, angularCycles=1, #only one cycle because no pattern actually repeats- trying to highlight only one sector
                     angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
     
-    return ringRadial,targetRadial,cueRing
+    return ringRadialThickWedges,ringRadialThickWedgesCopy,ringRadialThinWedges,targetRadial,cueRing,lines
     ######### End constructRingAsGrating ###########################################################
 
 if __name__ == "__main__": #do self-tests
@@ -277,40 +348,38 @@ if __name__ == "__main__": #do self-tests
     monitorwidth = 38.5 #28.5 #monitor width in centimeters
     viewdist = 57.; #cm
     mon = monitors.Monitor("testMonitor",width=monitorwidth, distance=viewdist) #fetch the most recent calib for this monitor
-    bgColor = [-1,-1,-1]; allowGUI = True; units='deg'; fullscr=0; scrn=0; waitBlank=False
+    bgColor = [0,0,0] # [-1,-1,-1]
+    allowGUI = True; units='deg'; fullscr=0; scrn=0; waitBlank=False
     #mon.setSizePix( (widthPix,heightPix) )
     widthPix = 800; heightPix = 600
     myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,scrn,waitBlank)
     widthPix = myWin.size[0]; heightPix = myWin.size[1]
 
-#    radius= 22
-#    ringRadialMask=[0,0,0,0,1] #to mask off center part of cirle, all a part of creating arc
-#
-#    numObjects = 4
-#    blobToCue = 2
-#    patchAngle = 30
-#    gratingTexPix=1024#nump
-#    ring,cueRing,currentlyCuedBlob =  constructMulticolorRingAsGrating(myWin,
-#                        radius,ringRadialMask,numObjects,patchAngle,colors=[[1,0,0],[0,0,1]],stimColorIdxsOrder=[0,1],\
-#                        gratingTexPix=gratingTexPix,blobToCue=blobToCue,ppLog=logging)
-
-  
     #Task will be to judge which thick wedge has the thin wedge offset within it
     numObjects = 6
     gratingTexPix= 1024
-    objToCue= 3
-    radius = 25
+    objToCue=0 
+    radius = 25.
     visibleWedge = [0,360]
     patchAngleThickWedges = 360/numObjects/2
     thickWedgeColor = [1,-1,-1]
     thinWedgeColor=[0,0,1]
     cueColor=[0,1,1]
-    radialMask =   np.array( [0,0,0,0,0,0,0,1,0,0,0] )
+    radialMask =   np.array( [0,0,0,0,1,0,0,0,0] )  #This is for the larger wedge that the TargetSliver is embedded in
+    radialMaskThinWedge =   np.array( [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] ) #This is the sliver that's offset relative to the larger wedge, that you have to judge the offset of
     wedgeRadiusFraction = np.where(radialMask)[0][0]*1.0 / len(radialMask)
     print('wedgeRadiusFraction = ',wedgeRadiusFraction)
     wedgeThicknessFraction = len( np.where(radialMask)[0] )*1.0 / len(radialMask)
     print('wedgeThickness = ',wedgeThicknessFraction*radius)
     wedgeCenterFraction = wedgeRadiusFraction + wedgeThicknessFraction/2.
+    
+    targetSliverRadiusFraction = np.where(radialMaskThinWedge)[0][0]*1.0 / len(radialMaskThinWedge)
+    print('targetSliverRadiusFraction = ',targetSliverRadiusFraction)
+    targetSliverThicknessFraction = len( np.where(radialMaskThinWedge)[0] )*1.0 / len(radialMaskThinWedge)
+    targetSliverCenterFraction = targetSliverRadiusFraction + targetSliverThicknessFraction/2.
+    print('targetSliverThickness = ',targetSliverThicknessFraction*radius, ' targetSliverCenterFraction=',targetSliverCenterFraction)
+    
+    #distance of cue arc
     desiredArcDistanceFractionRadius = .23
     cueInnerArcDesiredFraction = wedgeCenterFraction - desiredArcDistanceFractionRadius
     cueOuterArcDesiredFraction = wedgeCenterFraction + desiredArcDistanceFractionRadius
@@ -327,14 +396,15 @@ if __name__ == "__main__": #do self-tests
     cueRadialMask[ outerArcCenterPos ] = 1
     print('cueInnerArcDesiredFraction = ',cueInnerArcDesiredFraction, ' actual = ', innerArcCenterPos*1.0/len(cueRadialMask) )
     print('cueOuterArcDesiredFraction = ',cueOuterArcDesiredFraction, ' actual = ', outerArcCenterPos*1.0/len(cueRadialMask) )
-    targetAngleOffset = -6
-    thickThinWedgesRing, targetRing, cueRing =  \
-        constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,5,
-                            bgColor,thickWedgeColor,thinWedgeColor,targetAngleOffset,gratingTexPix,cueColor,objToCue,ppLog=logging)
-
+    targetAngleOffset = 0; targetRadialOffset = -1
+    thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueRing, lines =  \
+        constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskThinWedge,cueRadialMask,visibleWedge,numObjects,
+                            patchAngleThickWedges,patchAngleThickWedges,bgColor,thickWedgeColor,thinWedgeColor,targetAngleOffset,targetRadialOffset,gratingTexPix,cueColor,objToCue,ppLog=logging)
+    
     keepGoing = True
     while keepGoing:
-        thickThinWedgesRing.draw()
+        thickWedgesRing.draw()
+        thinWedgesRing.draw()
         cueRing.draw()
         #Draw thin wedges at same time as thick wedges. But when time to draw target, draw over old position of target thin wedge and draw displaced version
         #Now program the cue arcs and the target-displaced ring
@@ -348,10 +418,19 @@ if __name__ == "__main__": #do self-tests
 
     keepGoing = True #draw target superposed
     while keepGoing:
-        thickThinWedgesRing.draw()
-        targetRing.draw()
-        #Draw thin wedges at same time as thick wedges. But when time to draw target, draw over old position of target thin wedge and draw displaced version
-        #Now program the cue arcs and the target-displaced ring
+        #The thickWedgesRing, typically red, are drawn as a radial grating that occupies all 360 deg circular, with a texture to mask out everything else to create a ring
+        #The thinWedgesRing, typically blue, are centered in the red and one of these wedges will be later displaced to create a target.
+        #The targetRing is the displaced blue wedge. Actually a full circular radial grating, but visibleWedge set to subtend only the part where the target is.
+        #The thickWedgesRingCopy is to draw over the old, undisplaced blue wedge, only in the target area. It is thus a copy of the thickWedgesRing, 
+        # with visibleWedge set to show only the target part
+        #The cueRing is two white arcs to bring attention to the target area.
+        thickWedgesRing.draw() #Draw red thick wedges
+        thinWedgesRing.draw() #Draw thin blue wedge centered in thick red wedges
+        #When time to draw target, draw over old position of target thin wedge and draw displaced version
+        thickWedgesRingCopy.draw()
+        targetRing.draw() #this is the particular blue patch offset. And drawing the rest in red, so that the undisplaced doesn't show through.
+        for line in lines:
+            line.draw()
         myWin.flip()
         for key in event.getKeys():       #check if pressed abort-type key
               if key in ['escape','q']:
