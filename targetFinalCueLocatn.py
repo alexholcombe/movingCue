@@ -7,7 +7,7 @@ from psychopy import sound, monitors, logging
 import numpy as np
 import itertools #to calculate all subsets
 from copy import deepcopy
-from math import atan, pi, cos, sin, sqrt, ceil, atan2
+from math import atan, pi, cos, sin, sqrt, ceil, atan2, log
 import time, sys, platform, os, StringIO, gc, random
 eyetrackingOption = True #Include this so can turn it off, because Psychopy v1.83.01 mistakenly included an old version of pylink which prevents EyelinkEyetrackerForPsychopySUPA3 stuff from importing
 if eyetrackingOption:
@@ -102,7 +102,7 @@ myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,s
 myMouse = event.Mouse(visible = 'true',win=myWin)
 myWin.setRecordFrameIntervals(False)
 
-trialsPerCondition = 2 #default value
+trialsPerCondition = 1 #default value
 
 refreshMsg2 = ''
 if not checkRefreshEtc:
@@ -230,7 +230,7 @@ fixSizePix = 20 #make fixation big so flicker more conspicuous
 if fixatnNoise:
     numChecksAcross = fixSizePix/4
     nearestPowerOfTwo = round( sqrt(numChecksAcross) )**2 #Because textures (created on next line) must be a power of 2
-    fixatnNoiseTexture = np.round( np.random.rand(nearestPowerOfTwo,nearestPowerOfTwo) ,0 )   *2.0-1 
+    fixatnNoiseTexture = np.round( np.random.rand(nearestPowerOfTwo,nearestPowerOfTwo) ,0 )   *2.0-1  #multiply by 2 and subtract 1 so goes from -1 to 1
     #Can counterphase flicker  noise texture to create salient flicker if you break fixation
     fixation= visual.PatchStim(myWin, tex=fixatnNoiseTexture, size=(fixSizePix,fixSizePix), units='pix', mask='circle', interpolate=False, autoLog=autoLogging)
     fixationCounterphase= visual.PatchStim(myWin, tex=-1*fixatnNoiseTexture, colorSpace='rgb',mask='circle',size=fixSizePix,units='pix',autoLog=autoLogging)
@@ -245,7 +245,7 @@ fixationCounterphase.setPos([0,0])
 maskDur = 0.5 
 individualMaskDurFrames = 5
 numChecksAcross = 128
-nearestPowerOfTwo = round( sqrt(numChecksAcross) )**2 #Because textures (created on next line) must be a power of 2
+nearestPowerOfTwo = 2**round( log(numChecksAcross,2) ) #Because textures (created on next line) must be a power of 2
 noiseMasks = []
 numNoiseMasks = int(          ceil(maskDur / ((1/refreshRate)*individualMaskDurFrames))                    )
 for i in xrange(numNoiseMasks):
@@ -454,8 +454,8 @@ def collectResponses(expStop): #Kristjansson&Holcombe cuing experiment
            
     return responses,responsesAutopilot, expStop
 
-trialNum=0; numTrialsCorrect=0; expStop=False; framesSaved=0;
-print('Starting experiment of nTotal trialsStationary=', trialsStationary.nTotal,' nTotal trialsMoving=', trialsMoving.nTotal, ' Current trial is trial ',trialNum)
+numTrialsCorrect=0; expStop=False; framesSaved=0;
+print('Starting experiment of nTotal trialsStationary=', trialsStationary.nTotal,' nTotal trialsMoving=', trialsMoving.nTotal)
 myWin.flip()
 #end of header
 trialClock = core.Clock()
@@ -471,20 +471,25 @@ if eyetracking:
         eyeMoveFile=('EyeTrack_'+subject+'_'+timeAndDateStr+'.EDF')
     tracker=Tracker_EyeLink(myWin,trialClock,subject,1, 'HV5',(255,255,255),(0,0,0),False,(widthPix,heightPix))
 
+print('trialHandlerList=',trialHandlerList) #AHdebug
 for trials in trialHandlerList:
+    trialNum=0; print('Starting new block of trials')
     while trialNum < trials.nTotal and expStop==False:  #main trial loop
         thisTrial = trials.next()
         accelerateComputer(1,process_priority, disable_gc) #speed up
         
         numObjects = thisTrial['numObjsEachRing'][0] #haven't implemented additional rings yet
         objsPerQuadrant = numObjects / 4
-        if numObjects % 4 != 0:
-            msg = 'numObjects not evenly divisible by 4, therefore cannot randomise quadrant. Therefore picking object to cue completely randomly'
-            logging.error(msg); print(msg)
-            objToCue = np.array([0] )#np.random.random_integers(0, numObjects-1, size=1) #randomise which object is cued and thus is the target  #AHdebug
-        else:
-            withinQuadrantObjectToCue =  np.array([0])# AHdebug np.random.random_integers(0, objsPerQuadrant-1, size=1)
-            objToCue =  thisTrial['objToCueQuadrant']*objsPerQuadrant + withinQuadrantObjectToCue
+        objToCue = np.array([0] )
+        randomiseObjToCue = False
+        if randomiseObjToCue:
+            if numObjects % 4 != 0:
+                msg = 'numObjects not evenly divisible by 4, therefore cannot randomise quadrant. Therefore picking object to cue completely randomly'
+                logging.error(msg); print(msg)
+                objToCue = np.random.random_integers(0, numObjects-1, size=1) #randomise which object is cued and thus is the target 
+            else:
+                withinQuadrantObjectToCue =  np.random.random_integers(0, objsPerQuadrant-1, size=1)
+                objToCue =  thisTrial['objToCueQuadrant']*objsPerQuadrant + withinQuadrantObjectToCue
         #objToCue = np.array([7]); print('HEY objToCue not randomised')
         colorRings=list();
         preDrawStimToGreasePipeline = list()
@@ -714,20 +719,27 @@ if expStop == True:
 else: 
     print("Experiment finished")
 if  trialNum >0:  #save data
-    fileNamePP = fileNameWithPath + '.txt'
-    dfFromPP = trials.saveAsWideText(fileNamePP)
-    print("Psychopy wideText has been saved as", fileNamePP)
-    fileNamePickle = fileNameWithPath #.psydat will automatically be appended
-    trials.saveAsPickle(fileNamePickle) #.psydat
-    print("Most Psychopy-ic method: trials trialHandler has been saved as", fileNamePickle+'.psydat', " and should include copy of code")
-    dataFramesWorking = False
-    if dataFramesWorking:
-        df = dfFromPP[:trialNum] #delete trials for which don't have response etc. yet, as that will otherwise cause error when averaging, plotting
-        if trialNum < trials.nTotal: #When you abort early, correct and other columns are not numeric because have value of "-"
-            #converting to numeric
-            df = df.convert_objects(convert_numeric=True)
-            print('df.dtypes=', df.dtypes) #df.dtypes in my case are  "objects". you can't take the mean
-            print('dfFromPP =', df)
+    blockNum = 0
+    for trials in trialHandlerList:
+        blockNum += 1
+        if len(trialHandlerList) > 1: #more than 1 block of trials in this experiment
+            blockFnameText = 'block'+str(blockNum)
+        fileNamePP = fileNameWithPath + blockFnameText + '.txt'
+        dfFromPP = trials.saveAsWideText(fileNamePP)
+        print("Psychopy wideText has been saved as", fileNamePP)
+        saveAsPsydat = False
+        if saveAsPsydat:
+            fileNamePickle = fileNameWithPath #.psydat will automatically be appended
+            trials.saveAsPickle(fileNamePickle) #.psydat
+            print("trials trialHandler has been saved as", fileNamePickle+'.psydat', ", which is the most Psychopy-ic method and should include a copy of the code")
+        dataFramesWorking = False
+        if dataFramesWorking:
+            df = dfFromPP[:trialNum] #delete trials for which don't have response etc. yet, as that will otherwise cause error when averaging, plotting
+            if trialNum < trials.nTotal: #When you abort early, correct and other columns are not numeric because have value of "-"
+                #converting to numeric
+                df = df.to_numeric #deprecated: df.convert_objects(convert_numeric=True)
+                print('df.dtypes=', df.dtypes) #df.dtypes in my case are  "objects". you can't take the mean
+                print('dfFromPP =', df)
 if eyetracking and getEyeTrackingFileFromEyetrackingMachineAtEndOfExperiment:
     tracker.closeConnectionToEyeTracker(eyeMoveFile)
 logging.info('finishing at '+timeAndDateStr)

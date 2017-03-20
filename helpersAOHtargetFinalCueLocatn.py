@@ -105,7 +105,7 @@ def constructRingsAsGratings(myWin,numRings,radii,ringRadialMaskEachRing,numObje
     patchSizeTexture = round(patchSizeTexture) #best is odd number, even space on either size
     patchFlankSize = (segmentSizeTexture-patchSizeTexture)/2.
     patchAngleActual = patchSizeTexture / gratingTexPix * oneCycleAngle
-    if abs(patchAngleActual - patchAngle) > .01:
+    if abs(patchAngleActual - patchAngle) > .03: #.01
         msg = 'Desired patchAngle = '+str(patchAngle)+' but closest can get with '+str(gratingTexPix)+' gratingTexPix is '+str(patchAngleActual); 
         ppLog.warn(msg)
     
@@ -202,7 +202,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,initialAngle,radius,radialMas
         patchSizeTexture = round(patchSizeTexture) #best is odd number, even space on either size
         patchFlankSize =int( (segmentSizeTexture-patchSizeTexture)/2. )#this area will be drawn in bgColor
         patchAngleActual = patchSizeTexture*1.0 / gratingTexPix * oneCycleAngle
-        if abs(patchAngleActual - patchAngle) > .01:
+        if abs(patchAngleActual - patchAngle) > .03:
             msg = 'Desired patchAngle = '+str(patchAngle)+' but closest can get with '+str(gratingTexPix)+' gratingTexPix is '+str(patchAngleActual); 
             ppLog.warn(msg)
         return segmentSizeTexture, patchSizeTexture, patchFlankSize
