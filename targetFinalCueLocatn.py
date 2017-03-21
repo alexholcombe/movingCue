@@ -498,7 +498,7 @@ for trials in trialHandlerList:
         angleIniEachRing = list( np.random.uniform(0,2*pi,size=[numRings]) )
         #angleIniEachRing = list( [0] ); print('HEY angle not randomised')
         cueCurrAngleEachRing = angleIniEachRing * numRings
-        print("cueCurrAngleEachRing=",cueCurrAngleEachRing)
+        #print("cueCurrAngleEachRing=",cueCurrAngleEachRing)
         moveDirection = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction
         durExtra = thisTrial['durMotion'] if thisTrial['speed'] else 0 #in motion condition, cue moves for awhile before cue lead time clock starts
         maskBegin = thisTrial['cueLeadTime'] + targetDur + durExtra
@@ -665,7 +665,7 @@ for trials in trialHandlerList:
         #if len(speedIdxs) ==0:
         #    print('Apparently current speed= ',thisTrial['speed'],' is not in list of speeds=',speeds, '. Please make sure speeds is a numpy array')
         #else: speedIdx = speedIdxs[0]  #extract index, where returns a list with first element array of the indexes
-        numRightWrongEachSpeed[ thisTrial['speed']>0, int(correct >0) ] +=1  #if right, add to 1th column, otherwise add to 0th column count
+        numRightWrongEachSpeed[ int( thisTrial['speed']>0 ), int(correct >0) ] +=1  #if right, add to 1th column, otherwise add to 0th column count
         
         if feedback and not expStop:
             if correct:

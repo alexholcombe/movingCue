@@ -311,7 +311,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,initialAngle,radius,radialMas
        y = sin(    gratingAngleToEuclidean(angleDeg)*pi/180      ) * eccentricity
        lineColor = targetFillColors[0]
        if i == targeti:
-            print("line targeti=", targeti, " angleDeg=",angleDeg, "Euclidean angle=",gratingAngleToEuclidean(angleDeg) )
+            #print("line targeti=", targeti, " angleDeg=",angleDeg, "Euclidean angle=",gratingAngleToEuclidean(angleDeg) )
             orientation = tangentialOrientation
             if targetRadialOffset<0: #it's always one of two values, a negative one and a positive one
                 #orientation = tangentialOrientation + 90
@@ -343,7 +343,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,initialAngle,radius,radialMas
         objToCueCorrectdForRingReversal = objToCue #numObjects-1 - objToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
         visibleAngleStart = objToCueCorrectdForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2
         visibleAngleEnd = visibleAngleStart + patchAngleThick
-        print('objToCueCorrectdForRingReversal = ',objToCueCorrectdForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
+        #print('objToCueCorrectdForRingReversal = ',objToCueCorrectdForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
 
     cueRing = visual.RadialStim(myWin, tex=cueTex, color=[1,1,1],size=radius, #cueTexInner is white. Only one sector of it shown by mask
                     visibleWedge=[visibleAngleStart,visibleAngleEnd],
