@@ -9,11 +9,11 @@ import itertools #to calculate all subsets
 from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil, atan2, log
 import time, sys, platform, os, StringIO, gc, random
-eyetrackingOption = True #Include this so can turn it off, because Psychopy v1.83.01 mistakenly included an old version of pylink which prevents EyelinkEyetrackerForPsychopySUPA3 stuff from importing
+eyetrackingOption = False #Include this so can turn it off, because Psychopy v1.83.01 mistakenly included an old version of pylink which prevents EyelinkEyetrackerForPsychopySUPA3 stuff from importing
 if eyetrackingOption:
     from EyelinkEyetrackerForPsychopySUPA3 import Tracker_EyeLink #Chris Fajou integration
 from helpersAOHtargetFinalCueLocatn import accelerateComputer, openMyStimWindow, constructThickThinWedgeRingsTargetAndCue
-eyetracking = False
+eyetracking = False# False if practice, else true.
 getEyeTrackingFileFromEyetrackingMachineAtEndOfExperiment = False #If True, can take up to 1.5 hrs in certain conditions
 
 quitFinder = True
@@ -66,7 +66,7 @@ refreshRate = infoFirst['Screen refresh rate']
 
 if demo: refreshRate = 85. 
 tokenChosenEachRing= [-999]*numRings
-targetDur =  1/refreshRate * 50# 2 #duration of target  (in seconds) 
+targetDur =  1/refreshRate * 2 # 2 #duration of target  (in seconds) but staircased in practice 32, 8, 2 1st condition and 8,2 second
 targetDur = round(targetDur * refreshRate) / refreshRate #discretize to nearest integer number of refreshes
 rampUpDur=0
 rampUpFrames = refreshRate*rampUpDur
@@ -102,7 +102,9 @@ myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,s
 myMouse = event.Mouse(visible = 'true',win=myWin)
 myWin.setRecordFrameIntervals(False)
 
-trialsPerCondition = 1 #default value
+trialsPerCondition = 2*2 #default value is 2*4 but if want to block and do practice trials manually
+#but ensuring its all in correct blocked condition then need to alter trialHandler so it presents
+#double stationary or double motion so need reduce this by half to 2*2.
 
 refreshMsg2 = ''
 if not checkRefreshEtc:
@@ -263,8 +265,8 @@ stimListStationary = []; stimListMoving = []
 speeds = np.array([0,1]) # np.array( [ 0, 1]  )   #dont want to go faster than 2 rps because of blur problem
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
- for numObjsEachRing in [ [2] ]:#8 #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
-  for cueLeadTime in [0.267 ]:#..02, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
+ for numObjsEachRing in [ [8] ]:#8 #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
+  for cueLeadTime in [0.02, 0.060, 0.125, 0.167, 0.267, 0.467]:#..02, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
     for durMotionMin in [.45]:  #If speed!=0, how long should cue(s) move before stopping and cueLeadTime clock begins
       durMotion = durMotionMin + random.random()*.2
       for direction in [-1.0,1.0]:
@@ -282,8 +284,13 @@ for numCuesEachRing in [ [1] ]:
 trialsStationary = data.TrialHandler(stimListStationary,trialsPerCondition) #constant stimuli method
 trialsMoving = data.TrialHandler(stimListMoving,trialsPerCondition) #constant stimuli method
                                 #        extraInfo= {'subject':subject} )  #will be included in each row of dataframe and wideText. Not working in v1.82.01
-trialHandlerList = [ trialsStationary, trialsMoving ]
-random.shuffle(trialHandlerList)
+trialHandlerList = [ trialsMoving, trialsStationary ] #To change the order of blocks, change the order in this list
+#trialHandlerList = [trialsStationary, trialsStationary]
+#To do practice trial sets manually then expt making sure its blocked so all stationary or all motion need to have both set to same condition 
+#so either [trialsStationary, trialsStationary] or [trialsMoving, trialsMoving]. alex default was
+# [ trialsStationary, trialsMoving ] and then reduce no trials from 8 to 4 line 105 now 
+#doesn't work causes it to freeze. need another way of having it only give either moving or stationary
+#random.shuffle(trialHandlerList) #this randomises which one comes first
 
 numRightWrongEachSpeed = np.zeros([ len(speeds), 2 ]); #summary results to print out at end
 #end setup of record of proportion correct in various conditions
@@ -597,7 +604,7 @@ for trials in trialHandlerList:
         myWin.flip()
         if eyetracking:
             tracker.stopEyeTracking()
-    
+            print ("Told eye tracker to stop")
         #end of big stimulus loop
         accelerateComputer(0,process_priority, disable_gc) #turn off stuff that sped everything up
         #check for timing problems
