@@ -5,7 +5,7 @@ import numpy as np
 import itertools #to calculate all subsets
 from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil
-import time, sys, platform, os, StringIO, gc
+import time, sys, platform, os, gc
 from psychopy import visual, core
 import random 
 #If you run this code stand-alone, it will do a demo of the basic stimulus it is designed to provide
@@ -296,9 +296,13 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,initialAngle,radius,radialMas
     wedgeThickness =  wedgeThicknessFraction*radius/2
     targeti = targetCorrectedForRingReversal % numObjects # (targetCorrectedForRingReversal-1)  % numObjects   #dont know why have to subtract 1. Then have to mod numObjects so negative number gets turned into positive
     targetFillColors = np.array([[.9,.9,.9],[-.8,-.8,-.8]]) #  [-.3,-.3,-.3]
-    for i in xrange(0,numObjects):
+    if sys.version_info[0] == 3: #python3
+        rangeOverObjects = range(0,numObjects)
+    else: #python2
+        rangeOverObjects = xrange(0,numObjects)
+    for i in rangeOverObjects:
        lineHeight =  wedgeThickness * 1.0# *1.0 
-       lineWidth = lineHeight / 10
+       lineWidth = lineHeight / 4 #divided by 10 makes it really small alex size, with div 4 being same as E2
        angleDeg = initialAngle
        angleDeg+= (visibleAngleStart+visibleAngleEnd)/2  #because when gratings are drawn, there's this additional offset for which bit of the grating is visible
        angleDeg += i/numObjects*360  
@@ -401,11 +405,11 @@ if __name__ == "__main__": #do self-tests
         msg='Can"t start outer arc at fraction='+str(cueOuterArcDesiredFraction)
         logging.error(msg); print(msg)
     fractionResolution = .02     #Quantisation of possible positions of cue arc
-    binsNeeded = 1.0 / fractionResolution
+    binsNeeded = round(1.0 / fractionResolution)
     cueRadialMask = np.zeros( binsNeeded )
     #For the cueRadialMask, want everything zero except just inside and outside of the wedges.
-    innerArcCenterPos = round( binsNeeded*cueInnerArcDesiredFraction )
-    outerArcCenterPos = round( binsNeeded*cueOuterArcDesiredFraction )
+    innerArcCenterPos = int( round( binsNeeded*cueInnerArcDesiredFraction ) )
+    outerArcCenterPos = int( round( binsNeeded*cueOuterArcDesiredFraction ) )
     cueRadialMask[ innerArcCenterPos ] = 1
     cueRadialMask[ outerArcCenterPos ] = 1
     print('cueInnerArcDesiredFraction = ',cueInnerArcDesiredFraction, ' actual = ', innerArcCenterPos*1.0/len(cueRadialMask) )

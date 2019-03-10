@@ -8,7 +8,7 @@ import numpy as np
 import itertools #to calculate all subsets
 from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil, atan2, log
-import time, sys, platform, os, StringIO, gc, random
+import time, sys, platform, os, gc, random, shutil
 eyetrackingOption = False #Include this so can turn it off, because Psychopy v1.83.01 mistakenly included an old version of pylink which prevents EyelinkEyetrackerForPsychopySUPA3 stuff from importing
 if eyetrackingOption:
     from EyelinkEyetrackerForPsychopySUPA3 import Tracker_EyeLink #Chris Fajou integration
@@ -27,7 +27,7 @@ disable_gc = True
 subject='test'#'test'
 autoLogging = False
 demo = False
-autopilot=False
+autopilot=True
 if autopilot:  subject='auto'
 feedback=True
 exportImages= False #quits after one trial / output image
@@ -102,9 +102,8 @@ myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,s
 myMouse = event.Mouse(visible = 'true',win=myWin)
 myWin.setRecordFrameIntervals(False)
 
-trialsPerCondition = 2*2 #default value is 2*4 but if want to block and do practice trials manually
-#but ensuring its all in correct blocked condition then need to alter trialHandler so it presents
-#double stationary or double motion so need reduce this by half to 2*2.
+trialsPerCondition = 2*4 #default value is 2*4 need have this as if want to block and do practice trials manually
+#but ensuring its all in correct blocked condition then need to have 184 trials and esc before runs stat.
 
 refreshMsg2 = ''
 if not checkRefreshEtc:
@@ -175,11 +174,13 @@ else:
 expname = ''
 fileNameWithPath = dataDir+'/'+subject+ '_' + expname+timeAndDateStr
 if not demo and not exportImages:
-    saveCodeCmd = 'cp \'' + sys.argv[0] + '\' '+ fileNameWithPath + '.py'
-    os.system(saveCodeCmd)  #save a copy of the code as it was when that subject was run
+    import shutil
+    bupCodeDestination = fileNameWithPath + '.py'
+    shutil.copyfile(sys.argv[0], bupCodeDestination)      
     #also save helpersAOH.py because it has critical drawing commands
-    saveCodeCmd = 'cp \'' + 'helpersAOH.py' + '\' '+ fileNameWithPath + '_helpersAOH.py'
-    os.system(saveCodeCmd)  #save a copy of the code as it was when that subject was run
+    bupHelpersDestinatn = fileNameWithPath + '_helpersAOH.py'
+    shutil.copyfile('helpersAOHtargetFinalCueLocatn.py', bupHelpersDestinatn)  
+
     logF = logging.LogFile(fileNameWithPath+'.log', 
         filemode='w',#if you set this to 'a' it will append instead of overwriting
         level=logging.INFO)#info, data, warnings, and errors will be sent to this logfile
@@ -250,7 +251,7 @@ numChecksAcross = 128
 nearestPowerOfTwo = 2**round( log(numChecksAcross,2) ) #Because textures (created on next line) must be a power of 2
 noiseMasks = []
 numNoiseMasks = int(          ceil(maskDur / ((1/refreshRate)*individualMaskDurFrames))                    )
-for i in xrange(numNoiseMasks):
+for i in range(numNoiseMasks): #in python3 xrange was changed to range
     whiteNoiseTexture = np.round( np.random.rand(nearestPowerOfTwo,nearestPowerOfTwo) ,0 )   *2.0-1 #Can counterphase flicker  noise texture to create salient flicker if you break fixation
     noiseMask= visual.PatchStim(myWin, tex=whiteNoiseTexture, 
         size=(widthPix,heightPix*.9),pos=[0,heightPix*.05], units='pix', interpolate=False, autoLog=autoLogging)
@@ -266,10 +267,10 @@ speeds = np.array([0,1]) # np.array( [ 0, 1]  )   #dont want to go faster than 2
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]:#8 #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
-  for cueLeadTime in [0.02, 0.060, 0.125, 0.167, 0.267, 0.467]:#..02, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
-    for durMotionMin in [.45]:  #If speed!=0, how long should cue(s) move before stopping and cueLeadTime clock begins
+  for cueLeadTime in [.02, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
+    for durMotionMin in [.45]:   #If speed!=0, how long should cue(s) move before stopping and cueLeadTime clock begins
       durMotion = durMotionMin + random.random()*.2
-      for direction in [-1.0,1.0]:
+      for direction in [1.0]: #AHdebug [-1.0,1.0]:
           for targetOffset in [-1,1]:
             for objToCueQuadrant in [0]: #AHdebug range(4):
                 speed = speeds[0] #stationary
@@ -285,7 +286,7 @@ trialsStationary = data.TrialHandler(stimListStationary,trialsPerCondition) #con
 trialsMoving = data.TrialHandler(stimListMoving,trialsPerCondition) #constant stimuli method
                                 #        extraInfo= {'subject':subject} )  #will be included in each row of dataframe and wideText. Not working in v1.82.01
 trialHandlerList = [ trialsMoving, trialsStationary ] #To change the order of blocks, change the order in this list
-#trialHandlerList = [trialsStationary, trialsStationary]
+#trialHandlerList = [ trialsStationary, trialsMoving ]
 #To do practice trial sets manually then expt making sure its blocked so all stationary or all motion need to have both set to same condition 
 #so either [trialsStationary, trialsStationary] or [trialsMoving, trialsMoving]. alex default was
 # [ trialsStationary, trialsMoving ] and then reduce no trials from 8 to 4 line 105 now 
@@ -389,7 +390,7 @@ def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,stimRings,target
                 y = sin(currLineAngle/180*pi) * eccentricity
                 line.setPos( [x,y], log=autoLogging)   
                 #line.draw() #debug, see if it's moving
-            #print("cueMovementEndTime=",cueMovementEndTime,"n=",n,", in sec=",n/refreshRate, "currLineAngle=",currLineAngle, "cues ori=",cues[numRing].ori) #debugAH
+            #print("cueMovementEndTime=",cueMovementEndTime,"n=",n,", in sec=",n/refreshRate, "currLineAngle=",currLineAngle, "cues ori=",cues[numRing].ori) #debugOFF
 
           cueCurrAngle = cues[numRing].ori
           for cue in cues: cue.draw()
@@ -411,7 +412,7 @@ def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,stimRings,target
                 else:
                     for line in lines:  
                         line.draw()
-          #if n==1:   print("n=",n,"timeTargetOnset = ",timeTargetOnset, "timeTargetOnset frames = ",timeTargetOnset*refreshRate, "cueLeadTime=",thisTrial['cueLeadTime']) #debugAH
+          #if n==1:   print("n=",n,"timeTargetOnset = ",timeTargetOnset, "timeTargetOnset frames = ",timeTargetOnset*refreshRate, "cueLeadTime=",thisTrial['cueLeadTime']) #debugOFF
           if n >= round(maskBegin*refreshRate): #time for mask
             howManyFramesIntoMaskInterval  = round(n - maskBegin*refreshRate)
             whichMask = int( howManyFramesIntoMaskInterval / individualMaskDurFrames ) #increment whichMAsk every maskFramesDur frames
@@ -469,20 +470,23 @@ trialClock = core.Clock()
 stimClock = core.Clock()
 ts = list();
 
-highA = sound.Sound('G',octave=5, sampleRate=6000, secs=.4, bits=8)
+highA = sound.Sound('G',octave=5, sampleRate=6000, secs=.4) #, bits=8)  latest version of psychopy no bits
 highA.setVolume(0.8)
-lowD = sound.Sound('E',octave=3, sampleRate=6000, secs=.4, bits=8)
+lowD = sound.Sound('E',octave=3, sampleRate=6000, secs=.4) #, bits=8)  latest version of psychopy no bits 
        
 if eyetracking:
     if getEyeTrackingFileFromEyetrackingMachineAtEndOfExperiment:
         eyeMoveFile=('EyeTrack_'+subject+'_'+timeAndDateStr+'.EDF')
     tracker=Tracker_EyeLink(myWin,trialClock,subject,1, 'HV5',(255,255,255),(0,0,0),False,(widthPix,heightPix))
 
-print('trialHandlerList=',trialHandlerList) #AHdebug
+totTrialsRun=0; trialNum = 0
 for trials in trialHandlerList:
     trialNum=0; print('Starting new block of trials')
     while trialNum < trials.nTotal and expStop==False:  #main trial loop
-        thisTrial = trials.next()
+        if psychopy.__version__ =='3.0.5':
+            thisTrial = trials.__next__()
+        else:
+            thisTrial = trials.next()
         accelerateComputer(1,process_priority, disable_gc) #speed up
         
         numObjects = thisTrial['numObjsEachRing'][0] #haven't implemented additional rings yet
@@ -497,7 +501,6 @@ for trials in trialHandlerList:
             else:
                 withinQuadrantObjectToCue =  np.random.random_integers(0, objsPerQuadrant-1, size=1)
                 objToCue =  thisTrial['objToCueQuadrant']*objsPerQuadrant + withinQuadrantObjectToCue
-        #objToCue = np.array([7]); print('HEY objToCue not randomised')
         colorRings=list();
         preDrawStimToGreasePipeline = list()
         isReversed= list([1]) * numRings #always takes values of -1 or 1
@@ -581,7 +584,6 @@ for trials in trialHandlerList:
         t0=trialClock.getTime(); t=trialClock.getTime()-t0
         ts = list()
         stimClock.reset()
-        #print("trialDurFrames=",trialDurFrames,"trialDur=",trialDurFrames/refreshRate) #debug
         offsetXYeachRing=[[0,0],[0,0]]
         lastFrame = 0 #only used if useClock = True
         for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
@@ -599,7 +601,7 @@ for trials in trialHandlerList:
                     framesSaved +=1
                 myWin.flip(clearBuffer=True)
                 #if n == round(thisTrial['cueLeadTime']*refreshRate): #debug
-                #  event.waitKeys(maxWait=20, keyList=['SPACE','ESCAPE','x'], timeStamped=False) #debugON
+                #  event.waitKeys(maxWait=20, keyList=['SPACE','ESCAPE','x'], timeStamped=False) #debugOFF
                 t=trialClock.getTime()-t0; ts.append(t);
         myWin.flip()
         if eyetracking:
@@ -635,7 +637,7 @@ for trials in trialHandlerList:
                             logging.info( 'flankers also=' + str( np.around(interframeIntervs[flankingAlso],1) ))
                 #end timing check
         passThisTrial=False
-        
+        print('Collecting responses for trial=',trialNum,' totTrialsRun=',totTrialsRun)
         # ####### set up and collect responses
         responses = list();  responsesAutopilot = list()
         responses,responsesAutopilot, expStop =  \
@@ -675,6 +677,7 @@ for trials in trialHandlerList:
         numRightWrongEachSpeed[ int( thisTrial['speed']>0 ), int(correct >0) ] +=1  #if right, add to 1th column, otherwise add to 0th column count
         
         if feedback and not expStop:
+            print('correct=',correct) #sound seems to not usually work
             if correct:
                 highA.setVolume(0.8)
                 highA.play()
@@ -683,7 +686,8 @@ for trials in trialHandlerList:
                 lowD.play()
             core.wait(0.3)
     
-        trialNum+=1
+        trialNum+=1; totTrialsRun +=1
+
         waitForKeyPressBetweenTrials = False
         if trialNum< trials.nTotal:
             pctTrialsCompletedForBreak = np.array([.5,.75])  
@@ -721,11 +725,11 @@ for trials in trialHandlerList:
         core.wait(.1); time.sleep(.1)
         #end trials loop  ###########################################################
 if expStop == True:
-    msg = 'user aborted experiment on keypress with trials trialNum=' + str(trialNum)
+    msg = 'user aborted experiment on keypress with trials trialNum=' + str(trialNum) + ' totTrialsRun=' + str(totTrialsRun)
     logging.info(msg);  print(msg)
 else: 
     print("Experiment finished")
-if  trialNum >0:  #save data
+if  totTrialsRun >0:  #save data
     blockNum = 0
     for trials in trialHandlerList:
         blockNum += 1
@@ -751,8 +755,11 @@ if eyetracking and getEyeTrackingFileFromEyetrackingMachineAtEndOfExperiment:
     tracker.closeConnectionToEyeTracker(eyeMoveFile)
 logging.info('finishing at '+timeAndDateStr)
 #print('%corr = ', round( correct*1.0/trialNum*100., 2)  , '% of ',trialNum,' trials', end=' ')
+nr = numRightWrongEachSpeed[:,1];  nw = numRightWrongEachSpeed[:,0]
+print('nr = ',nr,' nw=',nw)
+pctCorrEachSpeed = nr / (nr+nw)
 print('%corr each speed: ', end=' ')
-print(np.around( numRightWrongEachSpeed[:,1] / ( numRightWrongEachSpeed[:,0] + numRightWrongEachSpeed[:,1]), 2))
+print( np.around(pctCorrEachSpeed, 2)  )
 print('\t\t\t\tnum trials each speed =', numRightWrongEachSpeed[:,0] + numRightWrongEachSpeed[:,1])
 logging.flush()
 myWin.close()
