@@ -267,7 +267,7 @@ speeds = np.array([0,1]) # np.array( [ 0, 1]  )   #dont want to go faster than 2
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]:#8 #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
-  for cueLeadTime in [.02, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
+  for cueLeadTime in [.467]: # [.02, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
     for durMotionMin in [.45]:   #If speed!=0, how long should cue(s) move before stopping and cueLeadTime clock begins
       durMotion = durMotionMin + random.random()*.2
       for direction in [1.0]: #AHdebug [-1.0,1.0]:
@@ -592,8 +592,7 @@ for trials in trialHandlerList:
                     currFrame = round(t*refreshRate)
                 else: currFrame = n
                 
-                cueAngle = \
-                            oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,[cueDoubleRing],[thickWedgesRing,thinWedgesRing],
+                oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,[cueDoubleRing],[thickWedgesRing,thinWedgesRing],
                                                          [thickWedgesRingCopy,targetRing],lines,offsetXYeachRing) #actual drawing of stimuli
                 lastFrame = currFrame #only used if useClock=True
                 if exportImages:
