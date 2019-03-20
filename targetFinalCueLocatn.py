@@ -588,7 +588,7 @@ for trials in trialHandlerList:
             print('cueInnerArcDesiredFraction of object radius = ',cueInnerArcDesiredFraction, ' actual = ', innerArcActualFraction, ' exceeding tolerance of ',closeEnough )
         if abs(cueOuterArcDesiredFraction - outerArcActualFraction) > closeEnough:
             print('cueOuterArcDesiredFraction of object radius = ',cueOuterArcDesiredFraction, ' actual = ', outerArcActualFraction, ' exceeding tolerance of ',closeEnough)
-        initialAngle = 0 #debugON random.random()*360.
+        initialAngle = random.random()*360.
         thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueDoubleRing, lines=  constructThickThinWedgeRingsTargetAndCue(myWin, \
                 initialAngle,radii[0],radialMask,radialMaskThinWedge,
                 cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,patchAngleThickWedges,

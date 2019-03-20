@@ -17,29 +17,30 @@ Actually the gratings don't seem to be used at all, instead it's a "lines" thing
 
 * Record origin position, destination position, and brightness in all locations. Destination position can be calculated by taking origin and multiplying thisTrial['durMotion'] by speed.
 
+This is now in data file except destination which 
+
 * Christian: also report the time of 1) cue onset, 2) cue offset (which should be cue-onset + motion duration, I guess) and 3) target onset (which should be cue-offset + SOA). Recording these time points serve as a control of event times to better link events to gaze behavior. 
 
-Using     tracker.sendMessage(msg) ?
+Done using     `tracker.sendMessage(msg)` but haven't checked whether works.
 
-* Program task to be either destination position or origin position. And fix auditory feedback.
-
-* If auditory feedback can’t be fixed, add visual feedback message.
+* Program task to be either destination position or origin position.
+That might be jumping the gun because first want to verify there is something transient about all this, and problem with origin position is that it adds a cognitive demand, as the target has moved on.
+Should probably start with comparing long-duration stationary position with standard stationary
 
 ## Figure out what's determining location of cued object
         objToCue = np.array([0] )
 
         angleIniEachRing = list( np.random.uniform(0,2*pi,size=[numRings]) )
-Turning that off, see if that gets rid of random variation.
-
         initialAngle = random.random()*360.
-Turning that off. It seems to control initial angle of the cue within the grating.
+Turning both above off gets rid of random variation.
+When initialAngle = 0, with 8 objects target is slightly clockwise of vertical and positive angles rotate it clockwise.
 
 moveDirection randomized 
 
         randomiseObjToCue = False
 
-The lines are visual.Cirlces and I need to add their colors to data so they get printed out.
 Target color gets determined by targetRadialOffset (because that was equivalent with old task).
+Which object number is the target? *lineColor0*
 
 ## Setting up new experiment
 
