@@ -43,12 +43,12 @@ numRings=2
 radii=[25]   #Need to encode as array for those experiments wherein more than one ring presented 
 
 respRadius=radii[0] #deg
-refreshRate= 85 #85 #set to the framerate of the monitor
+refreshRate= 60 #85 #set to the framerate of the monitor
 useClock = False #as opposed to using frame count, which assumes no frames are ever missed
 fullscr=True; #show in small window (0) or full screen (1) 
 scrn=0 #which screen to display the stimuli. 0 is home screen, 1 is second screen
 # create a dialog from dictionary 
-infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
+infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':False, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
     title='MOT', 
     order=['Autopilot','Check refresh etc', 'Screen to use', 'Screen refresh rate', 'Fullscreen (timing errors if not)'], 
@@ -389,7 +389,7 @@ def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,stimRings,target
                 x = cos(currLineAngle/180*pi) * eccentricity
                 y = sin(currLineAngle/180*pi) * eccentricity
                 line.setPos( [x,y], log=autoLogging)   
-                #line.draw() #debug, see if it's moving
+                line.draw() #debugON, see if it's moving
             #print("cueMovementEndTime=",cueMovementEndTime,"n=",n,", in sec=",n/refreshRate, "currLineAngle=",currLineAngle, "cues ori=",cues[numRing].ori) #debugOFF
 
           cueCurrAngle = cues[numRing].ori
@@ -408,7 +408,7 @@ def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,stimRings,target
                 #draw target(s)
                 if not linesInsteadOfArcTargets:
                     for targetRing in targetRings:
-                        targetRing.draw()  #Probably just the new background (to replace the displaced target, and the target
+                      targetRing.draw()  #Probably just the new background (to replace the displaced target, and the target
                 else:
                     for line in lines:  
                         line.draw()
@@ -465,7 +465,7 @@ def collectResponses(expStop): #Kristjansson&Holcombe cuing experiment
 numTrialsCorrect=0; expStop=False; framesSaved=0;
 print('Starting experiment of nTotal trialsStationary=', trialsStationary.nTotal,' nTotal trialsMoving=', trialsMoving.nTotal)
 myWin.flip()
-#end of header
+#I don't need to print a header anymore, because it's done automatically by trialHandler with e.g. trials.saveAsWideText
 trialClock = core.Clock()
 stimClock = core.Clock()
 ts = list();

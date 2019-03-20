@@ -248,7 +248,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,initialAngle,radius,radialMas
             radialCycles=0, angularCycles=numObjects,
             angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
 
-    #Draw target (task is to judge offset of thin wedge relative to thick wedge.
+    #Draw target (task is to judge offset of thin wedge relative to thick wedge, or brightness of target)
     #So, overdraw a single segment of the grating by using visibleWedge
     #angularPhase = 
     #I need to not show the part of the thick wedge that will be displaced, while showing enough of thick wedge to overdraw previous location of thin wedge
