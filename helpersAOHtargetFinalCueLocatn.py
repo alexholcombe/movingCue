@@ -256,7 +256,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,initialAngle,radius,radialMas
     kludgeWiden= 5
     visibleAngleStart = targetCorrectedForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2 - kludgeWiden
     visibleAngleEnd = (visibleAngleStart+kludgeWiden) + patchAngleThick + kludgeWiden  
-    print('targetCorrectedForRingReversal = ',targetCorrectedForRingReversal,'targetRing initialAngle=', initialAngle, ' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
+    #print('targetCorrectedForRingReversal = ',targetCorrectedForRingReversal,'targetRing initialAngle=', initialAngle, ' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
     if targetAngleOffset >= 0:
         visibleAngleEnd -= targetAngleOffset #don't show the part of the thick wedge that would be displaced
     else: #shifted the other way, towards the start, so spillover on that side needs to be avoided by not drawing it

@@ -315,43 +315,43 @@ def RFcontourCalcModulation(angle,freq,phase):
     modulation = sin(angle*freq + phase) #radial frequency contour equation, e.g. http://www.journalofvision.org/content/14/11/12.full from Wilkinson et al. 1998
     return modulation
 
-ampTemporalRadiusModulation = 0.0 # 1.0/3.0
-ampModulatnEachRingTemporalPhase = np.random.rand(numRings) * 2*np.pi
-def xyThisFrameThisAngle(basicShape, radiiThisTrial, numRing, angle, thisFrameN, speed):
-    #period of oscillation should be in sec
-    periodOfRadiusModulation = 1.0/speed#so if speed=2 rps, radius modulation period = 0.5 s
-    r = radiiThisTrial[numRing]
-    timeSeconds = thisFrameN / refreshRate
-    modulatnPhaseRadians = timeSeconds/periodOfRadiusModulation * 2*pi + ampModulatnEachRingTemporalPhase[numRing]
-    def waveForm(phase,type):
-        if type=='sin':
-            return sin(modulatnPhaseRadians)
-        elif type == 'sqrWave':
-            ans = np.sign( sin(modulatnPhaseRadians) ) #-1 or 1. That's great because that's also sin min and max
-            if ans==0: ans = -1+ 2*round( np.random.rand(1)[0] ) #exception case is when 0, gives 0, so randomly change that to -1 or 1
-            return ans
-        else: print('Error! unexpected type in radiusThisFrameThisAngle')
-        
-    if basicShape == 'circle':
-        rThis =  r + waveForm(modulatnPhaseRadians,'sin') * r * ampTemporalRadiusModulation
-        rThis += r * RFcontourAmp * RFcontourCalcModulation(angle,RFcontourFreq,RFcontourPhase)
-        x = rThis*cos(angle)
-        y = rThis*sin(angle)
-    elif basicShape == 'square': #actual square-shaped trajectory. Could also add all the modulations to this, later
-            #Theta varies from 0 to 2pi. Instead of taking its cosine, I should just pretend it is linear. Map it to 0->1 with triangle wave
-            #Want 0 to pi to be -1 to 1
-            def triangleWave(period, phase):
-                   #triangle wave is in sine phase (starts at 0)
-                   y = -abs(phase % (2*period) - period) # http://stackoverflow.com/questions/1073606/is-there-a-one-line-function-that-generates-a-triangle-wave
-                   #y goes from -period to 0.  Need to rescale to -1 to 1 to match sine wave etc.
-                   y = y/period*2 + 1
-                   #Now goes from -1 to 1
-                   return y
-            x = r * triangleWave(pi,angle)
-            y = r * triangleWave(pi, (angle-pi/2)%(2*pi ))
-            #This will always describe a diamond. To change the shape would have to use vector rotation formula
-    else: print('Unexpected basicShape ',basicShape)
-    return x,y
+#ampTemporalRadiusModulation = 0.0 # 1.0/3.0
+#ampModulatnEachRingTemporalPhase = np.random.rand(numRings) * 2*np.pi
+#def xyThisFrameThisAngle(basicShape, radiiThisTrial, numRing, angle, thisFrameN, speed):
+#    #period of oscillation should be in sec
+#    periodOfRadiusModulation = 1.0/speed#so if speed=2 rps, radius modulation period = 0.5 s
+#    r = radiiThisTrial[numRing]
+#    timeSeconds = thisFrameN / refreshRate
+#    modulatnPhaseRadians = timeSeconds/periodOfRadiusModulation * 2*pi + ampModulatnEachRingTemporalPhase[numRing]
+#    def waveForm(phase,type):
+#        if type=='sin':
+#            return sin(modulatnPhaseRadians)
+#        elif type == 'sqrWave':
+#            ans = np.sign( sin(modulatnPhaseRadians) ) #-1 or 1. That's great because that's also sin min and max
+#            if ans==0: ans = -1+ 2*round( np.random.rand(1)[0] ) #exception case is when 0, gives 0, so randomly change that to -1 or 1
+#            return ans
+#        else: print('Error! unexpected type in radiusThisFrameThisAngle')
+#        
+#    if basicShape == 'circle':
+#        rThis =  r + waveForm(modulatnPhaseRadians,'sin') * r * ampTemporalRadiusModulation
+#        rThis += r * RFcontourAmp * RFcontourCalcModulation(angle,RFcontourFreq,RFcontourPhase)
+#        x = rThis*cos(angle)
+#        y = rThis*sin(angle)
+#    elif basicShape == 'square': #actual square-shaped trajectory. Could also add all the modulations to this, later
+#            #Theta varies from 0 to 2pi. Instead of taking its cosine, I should just pretend it is linear. Map it to 0->1 with triangle wave
+#            #Want 0 to pi to be -1 to 1
+#            def triangleWave(period, phase):
+#                   #triangle wave is in sine phase (starts at 0)
+#                   y = -abs(phase % (2*period) - period) # http://stackoverflow.com/questions/1073606/is-there-a-one-line-function-that-generates-a-triangle-wave
+#                   #y goes from -period to 0.  Need to rescale to -1 to 1 to match sine wave etc.
+#                   y = y/period*2 + 1
+#                   #Now goes from -1 to 1
+#                   return y
+#            x = r * triangleWave(pi,angle)
+#            y = r * triangleWave(pi, (angle-pi/2)%(2*pi ))
+#            #This will always describe a diamond. To change the shape would have to use vector rotation formula
+#    else: print('Unexpected basicShape ',basicShape)
+#    return x,y
 
 def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFrameN):
     #angleMove is deg of the circle
@@ -505,7 +505,7 @@ for trials in trialHandlerList:
         preDrawStimToGreasePipeline = list()
         isReversed= list([1]) * numRings #always takes values of -1 or 1
         reversalNumEachRing = list([0]) * numRings
-        angleIniEachRing = list( np.random.uniform(0,2*pi,size=[numRings]) )
+        angleIniEachRing = 0 #debugON list( np.random.uniform(0,2*pi,size=[numRings]) )
         #angleIniEachRing = list( [0] ); print('HEY angle not randomised')
         cueCurrAngleEachRing = angleIniEachRing * numRings
         #print("cueCurrAngleEachRing=",cueCurrAngleEachRing)
@@ -555,7 +555,7 @@ for trials in trialHandlerList:
             print('cueInnerArcDesiredFraction of object radius = ',cueInnerArcDesiredFraction, ' actual = ', innerArcActualFraction, ' exceeding tolerance of ',closeEnough )
         if abs(cueOuterArcDesiredFraction - outerArcActualFraction) > closeEnough:
             print('cueOuterArcDesiredFraction of object radius = ',cueOuterArcDesiredFraction, ' actual = ', outerArcActualFraction, ' exceeding tolerance of ',closeEnough)
-        initialAngle = random.random()*360.
+        initialAngle = 0 #debugON random.random()*360.
         thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueDoubleRing, lines=  constructThickThinWedgeRingsTargetAndCue(myWin, \
                 initialAngle,radii[0],radialMask,radialMaskThinWedge,
                 cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,patchAngleThickWedges,
@@ -662,9 +662,18 @@ for trials in trialHandlerList:
         
         #header print('trialnum\tsubject\tbasicShape\tnumObjects\tspeed\tdirection\tangleIni
         trials.data.add('subject', subject) #because extraInfo not working
+        #figure out color of lines (distractors and target) and record it for data file
+        lineI=0
+        for line in lines:
+            color = line.fillColor
+            rounded = np.round(color,0) #because dark or bright grey rather than fully black or fully white
+            color = rounded[0] #it's an RGB triple, just reducing it to -1 for dark grey or 1 for white
+            #print('lineColor =',line.fillColor, 'rounded=',rounded, 'color = ',color)
+            trials.data.add('lineColor'+str(lineI), color)
         trials.data.add('objToCueRing0', objToCue[0])
         trials.data.add('numObjsRing0', numObjsEachRing[0])
         trials.data.add('numCuesRing0', numCuesEachRing[0])
+        trials.data.add('fixatnPeriodFrames',fixatnPeriodFrames)
         trials.data.add('response', responses[0]) #switching to using psychopy-native ways of storing, saving data 
         trials.data.add('correct', correct) #switching to using psychopy-native ways of storing, saving data 
         trials.data.add('timingBlips', numCasesInterframeLong)
