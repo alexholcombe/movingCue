@@ -15,9 +15,11 @@ targetOffset indicates what the target should be. targetRing drawn when time for
 I guess to make target be at the cue destination, I just add to the targetRing orientation however far the cue has travelled.  Maybe don't draw distractors to visualize easily where target is.
 Actually the gratings don't seem to be used at all, instead it's a "lines" thing.
 
-* Record origin position, destination position, and brightness in all locations.
+* Record origin position, destination position, and brightness in all locations. Destination position can be calculated by taking origin and multiplying thisTrial['durMotion'] by speed.
 
 * Christian: also report the time of 1) cue onset, 2) cue offset (which should be cue-onset + motion duration, I guess) and 3) target onset (which should be cue-offset + SOA). Recording these time points serve as a control of event times to better link events to gaze behavior. 
+
+Using     tracker.sendMessage(msg) ?
 
 * Program task to be either destination position or origin position. And fix auditory feedback.
 

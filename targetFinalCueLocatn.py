@@ -391,66 +391,73 @@ def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFram
 
 def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,stimRings,targetRings,lines,offsetXYeachRing):
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
-          n=currFrame
-          if n<rampUpFrames:
-                contrast = cos( -pi+ pi* n/rampUpFrames  ) /2. +.5 #starting from -pi trough of cos, and scale into 0->1 range
-          else: contrast = 1
-          if n%2:
-            fixation.draw()#flicker fixation on and off at framerate to see when skip frame
-          else:
-            fixationCounterphase.draw()
-          fixationPoint.draw()
-          
-          numRing = 0 #Haven't implemented capability for multiple rings, although started out that way, got rid of it because complexity
-          #draw cue
-          cueMovementEndTime = 0
-          if thisTrial['speed']:
-            cueMovementEndTime += thisTrial['durMotion']
+  n=currFrame
+  if n<rampUpFrames:
+        contrast = cos( -pi+ pi* n/rampUpFrames  ) /2. +.5 #starting from -pi trough of cos, and scale into 0->1 range
+  else: contrast = 1
+  if n%2:
+    fixation.draw()#flicker fixation on and off at framerate to see when skip frame
+  else:
+    fixationCounterphase.draw()
+  fixationPoint.draw()
+  
+  numRing = 0 #Haven't implemented capability for multiple rings, although started out that way, got rid of it because complexity
+  #draw cue
+  cueMovementEndTime = 0
+  if thisTrial['speed']:
+    cueMovementEndTime += thisTrial['durMotion']
 
-          if n<= cueMovementEndTime*refreshRate: #cue movement interval. Afterwards, cue stationary
-            angleMove = angleChangeThisFrame(thisTrial, moveDirection, numRing, n, lastFrame)
-            cues[numRing].setOri(angleMove,operation='+',log=autoLogging)
-            for line in lines: #move their (eventual) position along with the cue.  
-                eccentricity = sqrt( line.pos[0]**2 + line.pos[1]**2 ) #reverse calculate its eccentricity
-                currLineAngle =  atan2(line.pos[1],line.pos[0])    /pi*180  #calculate its current angle
-                currLineAngle -= angleMove #subtraction because grating angles go opposite direction to non-gratings
-                x = cos(currLineAngle/180*pi) * eccentricity
-                y = sin(currLineAngle/180*pi) * eccentricity
-                line.setPos( [x,y], log=autoLogging)   
-                line.draw() #debugON, see if it's moving
-            #print("cueMovementEndTime=",cueMovementEndTime,"n=",n,", in sec=",n/refreshRate, "currLineAngle=",currLineAngle, "cues ori=",cues[numRing].ori) #debugOFF
-
-          cueCurrAngle = cues[numRing].ori
-          for cue in cues: cue.draw()
-          
-          #check whether time to draw target and distractor objects
-          timeTargetOnset = thisTrial['cueLeadTime']
-          if thisTrial['speed']>0:
-            timeTargetOnset += thisTrial['durMotion']
-          if n >= round(timeTargetOnset*refreshRate): #draw target and distractor objects
-                linesInsteadOfArcTargets = True
-                #draw distractor objects
-                if not linesInsteadOfArcTargets:
-                    for stimRing in stimRings: 
-                        stimRing.draw()
-                #draw target(s)
-                if not linesInsteadOfArcTargets:
-                    for targetRing in targetRings:
-                      targetRing.draw()  #Probably just the new background (to replace the displaced target, and the target
-                else:
-                    for line in lines:  
-                        line.draw()
-          #if n==1:   print("n=",n,"timeTargetOnset = ",timeTargetOnset, "timeTargetOnset frames = ",timeTargetOnset*refreshRate, "cueLeadTime=",thisTrial['cueLeadTime']) #debugOFF
-          if n >= round(maskBegin*refreshRate): #time for mask
-            howManyFramesIntoMaskInterval  = round(n - maskBegin*refreshRate)
-            whichMask = int( howManyFramesIntoMaskInterval / individualMaskDurFrames ) #increment whichMAsk every maskFramesDur frames
-            whichMask = whichMask % numNoiseMasks #restart with first if no more are available
-            #print("individualMaskDurFrames=",individualMaskDurFrames,"howManyFramesIntoMaskInterval=",howManyFramesIntoMaskInterval, " whichMask=",whichMask, "numNoiseMasks = ",numNoiseMasks)
-            noiseMasks[ int(whichMask) ].draw()
-
-          if blindspotFill:
-              blindspotStim.draw()
-          return cueCurrAngle
+  if n<= cueMovementEndTime*refreshRate: #cue movement interval. Afterwards, cue stationary
+    angleMove = angleChangeThisFrame(thisTrial, moveDirection, numRing, n, lastFrame)
+    cues[numRing].setOri(angleMove,operation='+',log=autoLogging)
+    for line in lines: #move their (eventual) position along with the cue.  
+        eccentricity = sqrt( line.pos[0]**2 + line.pos[1]**2 ) #reverse calculate its eccentricity
+        currLineAngle =  atan2(line.pos[1],line.pos[0])    /pi*180  #calculate its current angle
+        currLineAngle -= angleMove #subtraction because grating angles go opposite direction to non-gratings
+        x = cos(currLineAngle/180*pi) * eccentricity
+        y = sin(currLineAngle/180*pi) * eccentricity
+        line.setPos( [x,y], log=autoLogging)   
+        line.draw() #debugON, see if it's moving
+    #print("cueMovementEndTime=",cueMovementEndTime,"n=",n,", in sec=",n/refreshRate, "currLineAngle=",currLineAngle, "cues ori=",cues[numRing].ori) #debugOFF
+  if n == cueMovementEndTime*refreshRate:
+    if eyetracking:
+        tracker.sendMessage('Cue will stop moving with this upcoming frame.')
+                    
+  cueCurrAngle = cues[numRing].ori
+  for cue in cues: cue.draw()
+  
+  #check whether time to draw target and distractor objects
+  timeTargetOnset = thisTrial['cueLeadTime']
+  if thisTrial['speed']>0:
+    timeTargetOnset += thisTrial['durMotion']
+  if n >= round(timeTargetOnset*refreshRate): #draw target and distractor objects
+        linesInsteadOfArcTargets = True
+        #draw distractor objects
+        if not linesInsteadOfArcTargets:
+            for stimRing in stimRings: 
+                stimRing.draw()
+        #draw target(s)
+        if not linesInsteadOfArcTargets:
+            for targetRing in targetRings:
+              targetRing.draw()  #Probably just the new background (to replace the displaced target, and the target
+        else:
+            for line in lines:  
+                line.draw()
+  if eyetracking and n == round(timeTargetOnset*refreshRate):
+        tracker.sendMessage('Target and distractors drawn on next frame.')
+  #if n==1:   print("n=",n,"timeTargetOnset = ",timeTargetOnset, "timeTargetOnset frames = ",timeTargetOnset*refreshRate, "cueLeadTime=",thisTrial['cueLeadTime']) #debugOFF
+  if n >= round(maskBegin*refreshRate): #time for mask
+    howManyFramesIntoMaskInterval  = round(n - maskBegin*refreshRate)
+    whichMask = int( howManyFramesIntoMaskInterval / individualMaskDurFrames ) #increment whichMAsk every maskFramesDur frames
+    whichMask = whichMask % numNoiseMasks #restart with first if no more are available
+    #print("individualMaskDurFrames=",individualMaskDurFrames,"howManyFramesIntoMaskInterval=",howManyFramesIntoMaskInterval, " whichMask=",whichMask, "numNoiseMasks = ",numNoiseMasks)
+    noiseMasks[ int(whichMask) ].draw()
+  if eyetracking and n == round(timeTargetOnset*refreshRate):
+        tracker.sendMessage('Target and distractors drawn on next frame.')
+        
+  if blindspotFill:
+      blindspotStim.draw()
+  return cueCurrAngle
 # #######End of function definition that displays the stimuli!!!! #####################################
 
 respPromptText = visual.TextStim(myWin,height=0.04, pos=(0, -.9),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
@@ -612,13 +619,14 @@ for trials in trialHandlerList:
         stimClock.reset()
         offsetXYeachRing=[[0,0],[0,0]]
         lastFrame = 0 #only used if useClock = True
+        if eyetracking:
+            tracker.sendMessage('Drawing cue for the first time')
         for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
                 if useClock: #Don't count on not missing frames. Use actual time.
                     t = stimClock.getTime()
                     currFrame = round(t*refreshRate)
                 else: currFrame = n
-                
-                oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,[cueDoubleRing],[thickWedgesRing,thinWedgesRing],
+                cueCurrAngle = oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,[cueDoubleRing],[thickWedgesRing,thinWedgesRing],
                                                          [thickWedgesRingCopy,targetRing],lines,offsetXYeachRing) #actual drawing of stimuli
                 lastFrame = currFrame #only used if useClock=True
                 if exportImages:
@@ -662,7 +670,7 @@ for trials in trialHandlerList:
                             logging.info( 'flankers also=' + str( np.around(interframeIntervs[flankingAlso],1) ))
                 #end timing check
         passThisTrial=False
-        print('Collecting responses for trial=',trialNum,' totTrialsRun=',totTrialsRun)
+        #print('Collecting responses for trial=',trialNum,' totTrialsRun=',totTrialsRun)
         # ####### set up and collect responses
         responses = list();  responsesAutopilot = list()
         responses,responsesAutopilot, expStop =  \
@@ -696,11 +704,13 @@ for trials in trialHandlerList:
             color = rounded[0] #it's an RGB triple, just reducing it to -1 for dark grey or 1 for white
             #print('lineColor =',line.fillColor, 'rounded=',rounded, 'color = ',color)
             trials.data.add('lineColor'+str(lineI), color)
+            lineI +=1
         trials.data.add('objToCueRing0', objToCue[0])
         trials.data.add('numObjsRing0', numObjsEachRing[0])
         trials.data.add('numCuesRing0', numCuesEachRing[0])
         trials.data.add('objToCue0',objToCue[0])
         trials.data.add('initialAngle',initialAngle)
+        trials.data.add('cueLastAngle',cueCurrAngle)
         trials.data.add('fixatnPeriodFrames',fixatnPeriodFrames)
         trials.data.add('response', responses[0]) #switching to using psychopy-native ways of storing, saving data 
         trials.data.add('correct', correct) #switching to using psychopy-native ways of storing, saving data 
@@ -714,7 +724,7 @@ for trials in trialHandlerList:
         
         if feedback and not expStop:
             play_high_tone_correct_low_incorrect(correct, passThisTrial=False)
-            print('correct=',correct) #sound seems to not usually work
+            #print('correct=',correct) #Sound works now that I recreate the sound objects on each trial
     
         trialNum+=1; totTrialsRun +=1
 
