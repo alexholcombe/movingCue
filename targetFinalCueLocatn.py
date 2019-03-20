@@ -34,6 +34,10 @@ exportImages= False #quits after one trial / output image
 screenshot= False; screenshotDone = False;allowGUI = False;waitBlank = False
 trackAllIdenticalColors = True#with tracking, can either use same colors as other task (e.g. 6 blobs but only 3 colors so have to track one of 2) or set all blobs identical color
 
+seed = int( np.floor( time.time() ) )
+random.seed(seed); np.random.seed(seed) #https://stackoverflow.com/a/48056075/302378
+logging.info('Random seed:',seed)
+
 timeAndDateStr = time.strftime("%d%b%Y_%H-%M", time.localtime()) 
 respTypes=['order']; respType=respTypes[0]
 bindRadiallyRingToIdentify=1 #0 is inner, 1 is outer
@@ -263,7 +267,7 @@ NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',co
 NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 
 stimListStationary = []; stimListMoving = []
-speeds = np.array([0,1]) # np.array( [ 0, 1]  )   #dont want to go faster than 2 rps because of blur problem
+speedsBesidesStationary = np.array([1]) # np.array( [ 0, 1]  )   #dont want to go faster than 2 rps because of blur problem
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]:#8 #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
@@ -273,19 +277,18 @@ for numCuesEachRing in [ [1] ]:
       for direction in [1.0]: #AHdebug [-1.0,1.0]:
           for targetOffset in [-1,1]:
             for objToCueQuadrant in [0]: #AHdebug range(4):
-                speed = speeds[0] #stationary
                 stimListStationary.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'targetOffset':targetOffset,
-                                            'cueLeadTime':cueLeadTime,'durMotion':durMotion,'speed':speed,'objToCueQuadrant':objToCueQuadrant,'direction':direction} )
-                movingSpeedMin = speeds[1]
-                #add a random number to the speed so that final position is not predictable
-                speed = movingSpeedMin + random.random()*.2
-                stimListMoving.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'targetOffset':targetOffset,
-                                            'cueLeadTime':cueLeadTime,'durMotion':durMotion,'speed':speed,'objToCueQuadrant':objToCueQuadrant,'direction':direction} )
+                                            'cueLeadTime':cueLeadTime,'durMotion':durMotion,'speed':0,'objToCueQuadrant':objToCueQuadrant,'direction':direction} )
+                
+                for baseSpeed in speedsBesidesStationary:
+                    speed = baseSpeed + random.random()*.2 #add a random number to the speed so that final position is not predictable
+                    stimListMoving.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'targetOffset':targetOffset,
+                                                'cueLeadTime':cueLeadTime,'durMotion':durMotion,'speed':speed,'objToCueQuadrant':objToCueQuadrant,'direction':direction} )
 #set up record of proportion correct in various conditions
 trialsStationary = data.TrialHandler(stimListStationary,trialsPerCondition) #constant stimuli method
 trialsMoving = data.TrialHandler(stimListMoving,trialsPerCondition) #constant stimuli method
                                 #        extraInfo= {'subject':subject} )  #will be included in each row of dataframe and wideText. Not working in v1.82.01
-trialHandlerList = [ trialsMoving, trialsStationary ] #To change the order of blocks, change the order in this list
+trialHandlerList = [ trialsStationary, trialsMoving ] #To change the order of blocks, change the order in this list
 #trialHandlerList = [ trialsStationary, trialsMoving ]
 #To do practice trial sets manually then expt making sure its blocked so all stationary or all motion need to have both set to same condition 
 #so either [trialsStationary, trialsStationary] or [trialsMoving, trialsMoving]. alex default was
@@ -293,7 +296,7 @@ trialHandlerList = [ trialsMoving, trialsStationary ] #To change the order of bl
 #doesn't work causes it to freeze. need another way of having it only give either moving or stationary
 #random.shuffle(trialHandlerList) #this randomises which one comes first
 
-numRightWrongEachSpeed = np.zeros([ len(speeds), 2 ]); #summary results to print out at end
+numRightWrongEachSpeed = np.zeros([ len(speedsBesidesStationary)+1, 2 ]); #summary results to print out at end
 #end setup of record of proportion correct in various conditions
 
 timeAndDateStr = time.strftime("%d%b%Y_%H-%M", time.localtime()) 
@@ -353,6 +356,31 @@ def RFcontourCalcModulation(angle,freq,phase):
 #    else: print('Unexpected basicShape ',basicShape)
 #    return x,y
 
+#highA = sound.Sound('G',octave=5, sampleRate=6000, secs=.3)
+#low = sound.Sound('F',octave=3, sampleRate=6000, secs=.3)
+def play_high_tone_correct_low_incorrect(correct, passThisTrial=False):
+    try:
+        highA = sound.Sound('G',octave=5, sampleRate=6000, secs=.3)
+    except: #in case file missing, create inferiro click manually
+        logging.warn('Could not create the correct! sound')
+        print('Could not create the correct! sound')
+    try:
+        low = sound.Sound('F',octave=3, sampleRate=6000, secs=.3)
+    except: #in case file missing, create inferiro click manually
+        logging.warn('Could not create the wrong! sound')
+        print('Could not create the wrong! sound')        
+      
+    highA.setVolume(0.9)
+    low.setVolume(1.0)
+    if correct:
+        highA.play()
+    elif passThisTrial:
+        high= sound.Sound('G',octave=4, sampleRate=2000, secs=.08, bits=8)
+        for i in range(2): 
+            high.play();  low.play(); 
+    else: #incorrect
+        low.play()
+        
 def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFrameN):
     #angleMove is deg of the circle
     #speed is in units of revolutions per second
@@ -505,10 +533,8 @@ for trials in trialHandlerList:
         preDrawStimToGreasePipeline = list()
         isReversed= list([1]) * numRings #always takes values of -1 or 1
         reversalNumEachRing = list([0]) * numRings
-        angleIniEachRing = 0 #debugON list( np.random.uniform(0,2*pi,size=[numRings]) )
+        #angleIniEachRing = 0 #debugON list( np.random.uniform(0,2*pi,size=[numRings]) )
         #angleIniEachRing = list( [0] ); print('HEY angle not randomised')
-        cueCurrAngleEachRing = angleIniEachRing * numRings
-        #print("cueCurrAngleEachRing=",cueCurrAngleEachRing)
         moveDirection = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction
         durExtra = thisTrial['durMotion'] if thisTrial['speed'] else 0 #in motion condition, cue moves for awhile before cue lead time clock starts
         maskBegin = thisTrial['cueLeadTime'] + targetDur + durExtra
@@ -673,6 +699,8 @@ for trials in trialHandlerList:
         trials.data.add('objToCueRing0', objToCue[0])
         trials.data.add('numObjsRing0', numObjsEachRing[0])
         trials.data.add('numCuesRing0', numCuesEachRing[0])
+        trials.data.add('objToCue0',objToCue[0])
+        trials.data.add('initialAngle',initialAngle)
         trials.data.add('fixatnPeriodFrames',fixatnPeriodFrames)
         trials.data.add('response', responses[0]) #switching to using psychopy-native ways of storing, saving data 
         trials.data.add('correct', correct) #switching to using psychopy-native ways of storing, saving data 
@@ -685,14 +713,8 @@ for trials in trialHandlerList:
         numRightWrongEachSpeed[ int( thisTrial['speed']>0 ), int(correct >0) ] +=1  #if right, add to 1th column, otherwise add to 0th column count
         
         if feedback and not expStop:
+            play_high_tone_correct_low_incorrect(correct, passThisTrial=False)
             print('correct=',correct) #sound seems to not usually work
-            if correct:
-                highA.setVolume(0.8)
-                highA.play()
-            else: #incorrect
-                lowD.setVolume(0.8)
-                lowD.play()
-            core.wait(0.3)
     
         trialNum+=1; totTrialsRun +=1
 
