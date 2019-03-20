@@ -27,17 +27,15 @@ Done using     `tracker.sendMessage(msg)` but haven't checked whether works.
 That might be jumping the gun because first want to verify there is something transient about all this, and problem with origin position is that it adds a cognitive demand, as the target has moved on.
 Should probably start with comparing long-duration stationary position with standard stationary
 
-## Figure out what's determining location of cued object
+## Figured out what's determining location of cued object
         objToCue = np.array([0] )
-
         angleIniEachRing = list( np.random.uniform(0,2*pi,size=[numRings]) )
         initialAngle = random.random()*360.
-Turning both above off gets rid of random variation.
-When initialAngle = 0, with 8 objects target is slightly clockwise of vertical and positive angles rotate it clockwise.
+	randomiseObjToCue = False
 
-moveDirection randomized 
+Turning all above off gets rid of random variation.
+When initialAngle = 0, with 8 objects target is slightly clockwise of vertical and positive angles rotate it clockwise.  initialAngle randomization should be enough
 
-        randomiseObjToCue = False
 
 Target color gets determined by targetRadialOffset (because that was equivalent with old task).
 Which object number is the target? *lineColor0*

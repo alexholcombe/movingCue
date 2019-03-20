@@ -274,7 +274,7 @@ for numCuesEachRing in [ [1] ]:
   for cueLeadTime in [.467]: # [.02, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
     for durMotionMin in [.45]:   #If speed!=0, how long should cue(s) move before stopping and cueLeadTime clock begins
       durMotion = durMotionMin + random.random()*.2
-      for direction in [1.0]: #AHdebug [-1.0,1.0]:
+      for direction in [-1.0,1.0]:
           for targetOffset in [-1,1]:
             for objToCueQuadrant in [0]: #AHdebug range(4):
                 stimListStationary.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'targetOffset':targetOffset,
@@ -417,8 +417,8 @@ def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,stimRings,target
         x = cos(currLineAngle/180*pi) * eccentricity
         y = sin(currLineAngle/180*pi) * eccentricity
         line.setPos( [x,y], log=autoLogging)   
-        line.draw() #debugON, see if it's moving
-    #print("cueMovementEndTime=",cueMovementEndTime,"n=",n,", in sec=",n/refreshRate, "currLineAngle=",currLineAngle, "cues ori=",cues[numRing].ori) #debugOFF
+        #line.draw() #shows that it moves with the cue
+    #print("cueMovementEndTime=",cueMovementEndTime,"n=",n,", in sec=",n/refreshRate, "currLineAngle=",currLineAngle, "cues ori=",cues[numRing].ori) 
   if n == cueMovementEndTime*refreshRate:
     if eyetracking:
         tracker.sendMessage('Cue will stop moving with this upcoming frame.')
@@ -445,7 +445,7 @@ def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,stimRings,target
                 line.draw()
   if eyetracking and n == round(timeTargetOnset*refreshRate):
         tracker.sendMessage('Target and distractors drawn on next frame.')
-  #if n==1:   print("n=",n,"timeTargetOnset = ",timeTargetOnset, "timeTargetOnset frames = ",timeTargetOnset*refreshRate, "cueLeadTime=",thisTrial['cueLeadTime']) #debugOFF
+  #if n==1:   print("n=",n,"timeTargetOnset = ",timeTargetOnset, "timeTargetOnset frames = ",timeTargetOnset*refreshRate, "cueLeadTime=",thisTrial['cueLeadTime']) 
   if n >= round(maskBegin*refreshRate): #time for mask
     howManyFramesIntoMaskInterval  = round(n - maskBegin*refreshRate)
     whichMask = int( howManyFramesIntoMaskInterval / individualMaskDurFrames ) #increment whichMAsk every maskFramesDur frames
@@ -540,8 +540,6 @@ for trials in trialHandlerList:
         preDrawStimToGreasePipeline = list()
         isReversed= list([1]) * numRings #always takes values of -1 or 1
         reversalNumEachRing = list([0]) * numRings
-        #angleIniEachRing = 0 #debugON list( np.random.uniform(0,2*pi,size=[numRings]) )
-        #angleIniEachRing = list( [0] ); print('HEY angle not randomised')
         moveDirection = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction
         durExtra = thisTrial['durMotion'] if thisTrial['speed'] else 0 #in motion condition, cue moves for awhile before cue lead time clock starts
         maskBegin = thisTrial['cueLeadTime'] + targetDur + durExtra
@@ -633,7 +631,7 @@ for trials in trialHandlerList:
                     myWin.getMovieFrame(buffer='back') #for later saving
                     framesSaved +=1
                 myWin.flip(clearBuffer=True)
-                #if n == round(thisTrial['cueLeadTime']*refreshRate): #debug
+                #if n == round(thisTrial['cueLeadTime']*refreshRate): 
                 #  event.waitKeys(maxWait=20, keyList=['SPACE','ESCAPE','x'], timeStamped=False) #debugOFF
                 t=trialClock.getTime()-t0; ts.append(t);
         myWin.flip()
@@ -774,8 +772,8 @@ for trials in trialHandlerList:
                 fileNamePP = fileNameWithPath + blockFnameText # + '.txt'
                 dfFromPP = None
                 dfFromPP = trialsSave.saveAsWideText(fileNamePP, appendFile = False, fileCollisionMethod='overwrite')
-                if dfFromPP is not None:
-                    print("Psychopy wideText has been saved as", fileNamePP)
+                #if dfFromPP is not None:
+                #    print("Psychopy wideText has been saved as", fileNamePP)
                 saveAsPsydat = False
                 if saveAsPsydat:
                     fileNamePickle = fileNameWithPath #.psydat will automatically be appended
