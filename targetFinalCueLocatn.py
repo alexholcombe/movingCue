@@ -16,7 +16,7 @@ from helpersAOHtargetFinalCueLocatn import accelerateComputer, openMyStimWindow,
 eyetracking = False# False if practice, else true.
 getEyeTrackingFileFromEyetrackingMachineAtEndOfExperiment = False #If True, can take up to 1.5 hrs in certain conditions
 
-quitFinder = True
+quitFinder = False #debugON
 if quitFinder:
     applescript="\'tell application \"Finder\" to quit\'" #quit Finder.
     shellCmd = 'osascript -e '+applescript
@@ -36,7 +36,8 @@ trackAllIdenticalColors = True#with tracking, can either use same colors as othe
 
 seed = int( np.floor( time.time() ) )
 random.seed(seed); np.random.seed(seed) #https://stackoverflow.com/a/48056075/302378
-logging.info('Random seed:',seed)
+savingForEventualLog = list()
+savingForEventualLog.append("Random seed:" + str(seed))
 
 timeAndDateStr = time.strftime("%d%b%Y_%H-%M", time.localtime()) 
 respTypes=['order']; respType=respTypes[0]
@@ -60,7 +61,7 @@ OK = gui.DlgFromDict(dictionary=infoFirst,
             'Screen to use': '0 means primary screen, 1 means second screen'},
     )
 if not OK.OK:
-    print('User cancelled from dialog box'); logging.info('User cancelled from dialog box'); core.quit()
+    print('User cancelled from dialog box'); savingForEventualLog.append('User cancelled from dialog box'); core.quit()
 autopilot = infoFirst['Autopilot']
 checkRefreshEtc = infoFirst['Check refresh etc']
 scrn = infoFirst['Screen to use']
@@ -152,7 +153,7 @@ msgWrongResolution = ''
 if checkRefreshEtc and (not demo) and (myWinRes != [widthPix,heightPix]).any():
     msgWrongResolution = 'Instead of desired resolution of '+ str(widthPix)+'x'+str(heightPix)+ ' pixels, screen apparently '+ str(myWinRes[0])+ 'x'+ str(myWinRes[1])
     myDlg.addText(msgWrongResolution, color='Red')
-    print(msgWrongResolution); logging.info(msgWrongResolution)
+    print(msgWrongResolution);  savingForEventualLog.append(msgWrongResolution)
 myDlg.addText('Note: to abort press ESC at a trials response screen', color='DimGrey') # color='DimGrey') color names stopped working along the way, for unknown reason
 myDlg.show()
 if myDlg.OK: #unpack information from dialogue box
@@ -163,17 +164,16 @@ if myDlg.OK: #unpack information from dialogue box
          subject = name #change subject default name to what user entered
        trialsPerCondition = int( thisInfo[ dlgLabelsOrdered.index('trialsPerCondition') ] ) #convert string to integer
        print('trialsPerCondition=',trialsPerCondition)
-       logging.info('trialsPerCondition ='+str(trialsPerCondition))
+       savingForEventualLog.append('trialsPerCondition ='+str(trialsPerCondition))
 else: 
-   print('User cancelled from dialog box.'); logging.info('User cancelled from dialog box')
-   logging.flush()
+   print('User cancelled from dialog box.'); savingForEventualLog.append('User cancelled from dialog box')
    core.quit()
 
 if os.path.isdir('.'+os.sep+'dataRaw'):
     dataDir='dataRaw'
 else:
     msg= 'dataRaw directory does not exist, so saving data in present working directory'
-    print(msg); logging.info(msg)
+    print(msg); savingForEventualLog.append(msg)
     dataDir='.'
 expname = ''
 fileNameWithPath = dataDir+'/'+subject+ '_' + expname+timeAndDateStr
@@ -184,13 +184,13 @@ if not demo and not exportImages:
     #also save helpersAOH.py because it has critical drawing commands
     bupHelpersDestinatn = fileNameWithPath + '_helpersAOH.py'
     shutil.copyfile('helpersAOHtargetFinalCueLocatn.py', bupHelpersDestinatn)  
-
     logF = logging.LogFile(fileNameWithPath+'.log', 
         filemode='w',#if you set this to 'a' it will append instead of overwriting
         level=logging.INFO)#info, data, warnings, and errors will be sent to this logfile
 if demo or exportImages: 
   logging.console.setLevel(logging.ERROR)  #only show this level  messages and higher
-logging.console.setLevel(logging.WARNING) #DEBUG means set the console to receive nearly all messges, INFO is for everything else, INFO, EXP, DATA, WARNING and ERROR 
+logging.console.setLevel(logging.WARNING) #DEBUG means set the console to receive nearly all messges, INFO is for everything else, INFO, EXP, DATA, WARNING and ERROR
+logging.info(savingForEventualLog) #stuff recorded before log set up
 if refreshRateWrong:
     logging.error(refreshMsg1+refreshMsg2)
 else: logging.info(refreshMsg1+refreshMsg2)
@@ -516,9 +516,9 @@ if eyetracking:
 
 totTrialsRun=0; trialNum = 0
 for trials in trialHandlerList:
-    trialNum=0; print('Starting new block of trials')
+    trialNum=0; print('Starting new block of ' + str(trials.nTotal) + ' trials')
     while trialNum < trials.nTotal and expStop==False:  #main trial loop
-        if psychopy.__version__ =='3.0.5':
+        if psychopy.__version__ >='3.0.5':
             thisTrial = trials.__next__()
         else:
             thisTrial = trials.next()
@@ -763,34 +763,39 @@ for trials in trialHandlerList:
                         waitingForKeypress=False
             myWin.clearBuffer()
         core.wait(.1); time.sleep(.1)
+        
+        
+        if totTrialsRun >0:  #save data
+            blockNum = 0
+            for trialsSave in trialHandlerList:
+                blockNum += 1
+                if len(trialHandlerList) > 1: #more than 1 block of trials in this experiment
+                    blockFnameText = 'block'+str(blockNum)
+                fileNamePP = fileNameWithPath + blockFnameText # + '.txt'
+                dfFromPP = None
+                dfFromPP = trialsSave.saveAsWideText(fileNamePP, appendFile = False, fileCollisionMethod='overwrite')
+                if dfFromPP is not None:
+                    print("Psychopy wideText has been saved as", fileNamePP)
+                saveAsPsydat = False
+                if saveAsPsydat:
+                    fileNamePickle = fileNameWithPath #.psydat will automatically be appended
+                    trialsSave.saveAsPickle(fileNamePickle, fileCollisionMethod='overwrite') #.psydat
+                    print("trials trialHandler has been saved as", fileNamePickle+'.psydat', ", which is the most Psychopy-ic method and should include a copy of the code")
+                dataFramesWorking = False
+                if dataFramesWorking:
+                    df = dfFromPP[:trialNum] #delete trials for which don't have response etc. yet, as that will otherwise cause error when averaging, plotting
+                    if trialNum < trialsSave.nTotal: #When you abort early, correct and other columns are not numeric because have value of "-"
+                        #converting to numeric
+                        df = df.to_numeric #deprecated: df.convert_objects(convert_numeric=True)
+                        print('df.dtypes=', df.dtypes) #df.dtypes in my case are  "objects". you can't take the mean
+                        print('dfFromPP =', df)
         #end trials loop  ###########################################################
 if expStop == True:
     msg = 'user aborted experiment on keypress with trials trialNum=' + str(trialNum) + ' totTrialsRun=' + str(totTrialsRun)
     logging.info(msg);  print(msg)
 else: 
     print("Experiment finished")
-if  totTrialsRun >0:  #save data
-    blockNum = 0
-    for trials in trialHandlerList:
-        blockNum += 1
-        if len(trialHandlerList) > 1: #more than 1 block of trials in this experiment
-            blockFnameText = 'block'+str(blockNum)
-        fileNamePP = fileNameWithPath + blockFnameText + '.txt'
-        dfFromPP = trials.saveAsWideText(fileNamePP)
-        print("Psychopy wideText has been saved as", fileNamePP)
-        saveAsPsydat = False
-        if saveAsPsydat:
-            fileNamePickle = fileNameWithPath #.psydat will automatically be appended
-            trials.saveAsPickle(fileNamePickle) #.psydat
-            print("trials trialHandler has been saved as", fileNamePickle+'.psydat', ", which is the most Psychopy-ic method and should include a copy of the code")
-        dataFramesWorking = False
-        if dataFramesWorking:
-            df = dfFromPP[:trialNum] #delete trials for which don't have response etc. yet, as that will otherwise cause error when averaging, plotting
-            if trialNum < trials.nTotal: #When you abort early, correct and other columns are not numeric because have value of "-"
-                #converting to numeric
-                df = df.to_numeric #deprecated: df.convert_objects(convert_numeric=True)
-                print('df.dtypes=', df.dtypes) #df.dtypes in my case are  "objects". you can't take the mean
-                print('dfFromPP =', df)
+
 if eyetracking and getEyeTrackingFileFromEyetrackingMachineAtEndOfExperiment:
     tracker.closeConnectionToEyeTracker(eyeMoveFile)
 logging.info('finishing at '+timeAndDateStr)
