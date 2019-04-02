@@ -265,6 +265,7 @@ respText = visual.TextStim(myWin,pos=(0, -.8),colorSpace='rgb',color = (1,1,1),a
 NextText = visual.TextStim(myWin,pos=(0, 0),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',color= (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
+NextRemindCountText.setText( ' ' )
 
 stimListStationary = []; stimListMoving = []
 speedsBesidesStationary = np.array([1]) # np.array( [ 0, 1]  )   #dont want to go faster than 2 rps because of blur problem
@@ -514,7 +515,7 @@ if eyetracking:
         eyeMoveFile=('EyeTrack_'+subject+'_'+timeAndDateStr+'.EDF')
     tracker=Tracker_EyeLink(myWin,trialClock,subject,1, 'HV5',(255,255,255),(0,0,0),False,(widthPix,heightPix))
 
-totTrialsRun=0; trialNum = 0
+totTrialsRun=0; trialNum = 0; blockNum = 0
 for trials in trialHandlerList:
     trialNum=0; print('Starting new block of ' + str(trials.nTotal) + ' trials')
     while trialNum < trials.nTotal and expStop==False:  #main trial loop
@@ -523,6 +524,46 @@ for trials in trialHandlerList:
         else:
             thisTrial = trials.next()
         accelerateComputer(1,process_priority, disable_gc) #speed up
+        
+        waitForKeyPressBetweenTrials = False
+        if trialNum< trials.nTotal:
+            pctTrialsCompletedForBreak = np.array([0,.5,.8])  
+            breakTrials = np.round(trials.nTotal*pctTrialsCompletedForBreak)
+            timeForTrialsRemainingMsg = np.any(trialNum==breakTrials)
+            pctDone = round(    (1.0*trialNum) / (1.0*trials.nTotal)*100,  0  )
+            if timeForTrialsRemainingMsg and not (pctDone==0 and blockNum==0): #Don't do it for first trial of first block
+                if pctDone ==0: #first trial of block
+                   NextRemindPctDoneText.setText( 'New block and NEW CUING CONDIION commencing' )
+                   NextRemindCountText.setText( ' ' )
+                else:
+                   NextRemindPctDoneText.setText( str(pctDone) + '% complete' )
+                   NextRemindCountText.setText( str(trialNum) + ' of ' + str(trials.nTotal)  + ' in this block.'    )
+                for i in range(5):
+                    myWin.flip(clearBuffer=True)
+                    NextRemindPctDoneText.draw()
+                    NextRemindCountText.draw()
+            waitingForKeypress = False
+            if waitForKeyPressBetweenTrials or timeForTrialsRemainingMsg:
+                waitingForKeypress=True
+                NextText.setText('Press "SPACE" to continue')
+                NextText.draw()
+                NextRemindCountText.draw()
+                #NextRemindText.draw()
+                myWin.flip(clearBuffer=True) 
+            else: core.wait(0.15)
+            while waitingForKeypress:
+               if autopilot:
+                    waitingForKeypress=False
+               elif expStop == True:
+                    waitingForKeypress=False
+               for key in event.getKeys():       #check if pressed abort-type key
+                     if key in ['space']: 
+                        waitingForKeypress=False
+                     if key in ['escape','q']:
+                        expStop = True
+                        waitingForKeypress=False
+            myWin.clearBuffer()
+        core.wait(.04); time.sleep(.03) 
         
         numObjects = thisTrial['numObjsEachRing'][0] #haven't implemented additional rings yet
         objsPerQuadrant = numObjects / 4
@@ -725,43 +766,7 @@ for trials in trialHandlerList:
             #print('correct=',correct) #Sound works now that I recreate the sound objects on each trial
     
         trialNum+=1; totTrialsRun +=1
-
-        waitForKeyPressBetweenTrials = False
-        if trialNum< trials.nTotal:
-            pctTrialsCompletedForBreak = np.array([.5,.75])  
-            breakTrials = np.round(trials.nTotal*pctTrialsCompletedForBreak)
-            timeForTrialsRemainingMsg = np.any(trialNum==breakTrials)
-            if timeForTrialsRemainingMsg :
-                pctDone = round(    (1.0*trialNum) / (1.0*trials.nTotal)*100,  0  )
-                NextRemindPctDoneText.setText( str(pctDone) + '% complete' )
-                NextRemindCountText.setText( str(trialNum) + ' of ' + str(trials.nTotal)  + ' in this block.'    )
-                for i in range(5):
-                    myWin.flip(clearBuffer=True)
-                    NextRemindPctDoneText.draw()
-                    NextRemindCountText.draw()
-            waitingForKeypress = False
-            if waitForKeyPressBetweenTrials or timeForTrialsRemainingMsg:
-                waitingForKeypress=True
-                NextText.setText('Press "SPACE" to continue')
-                NextText.draw()
-                NextRemindCountText.draw()
-                #NextRemindText.draw()
-                myWin.flip(clearBuffer=True) 
-            else: core.wait(0.15)
-            while waitingForKeypress:
-               if autopilot:
-                    waitingForKeypress=False
-               elif expStop == True:
-                    waitingForKeypress=False
-               for key in event.getKeys():       #check if pressed abort-type key
-                     if key in ['space']: 
-                        waitingForKeypress=False
-                     if key in ['escape','q']:
-                        expStop = True
-                        waitingForKeypress=False
-            myWin.clearBuffer()
-        core.wait(.1); time.sleep(.1)
-        
+        core.wait(.05); time.sleep(.08)
         
         if totTrialsRun >0:  #save data
             blockNum = 0
@@ -787,6 +792,7 @@ for trials in trialHandlerList:
                         df = df.to_numeric #deprecated: df.convert_objects(convert_numeric=True)
                         print('df.dtypes=', df.dtypes) #df.dtypes in my case are  "objects". you can't take the mean
                         print('dfFromPP =', df)
+        blockNum +=1
         #end trials loop  ###########################################################
 if expStop == True:
     msg = 'user aborted experiment on keypress with trials trialNum=' + str(trialNum) + ' totTrialsRun=' + str(totTrialsRun)

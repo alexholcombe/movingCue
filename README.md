@@ -12,12 +12,11 @@ Transient attnetion is hard to get, unless myabe you train Ss for hours?
 What's determining answer location for answer scoring?
 targetOffset indicates what the target should be. targetRing drawn when time for target.
 
-I guess to make target be at the cue destination, I just add to the targetRing orientation however far the cue has travelled.  Maybe don't draw distractors to visualize easily where target is.
-Actually the gratings don't seem to be used at all, instead it's a "lines" thing.
+The gratings aren't used at all, instead it's a "lines" thing.
 
 * Record origin position, destination position, and brightness in all locations. Destination position can be calculated by taking origin and multiplying thisTrial['durMotion'] by speed.
 
-This is now in data file except destination which 
+This is now in data file except destination which has to be calculated by taking initial angle and adding speed*durMotion (it would be risky to use the line angle because it is backwards-calculated)
 
 * Christian: also report the time of 1) cue onset, 2) cue offset (which should be cue-onset + motion duration, I guess) and 3) target onset (which should be cue-offset + SOA). Recording these time points serve as a control of event times to better link events to gaze behavior. 
 
