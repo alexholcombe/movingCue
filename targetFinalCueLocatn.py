@@ -50,7 +50,7 @@ radii=[25]   #Need to encode as array for those experiments wherein more than on
 respRadius=radii[0] #deg
 refreshRate= 60 #85 #set to the framerate of the monitor
 useClock = False #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=True; #show in small window (0) or full screen (1) 
+fullscr=False; #show in small window (0) or full screen (1) 
 scrn=0 #which screen to display the stimuli. 0 is home screen, 1 is second screen
 # create a dialog from dictionary 
 infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':False, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
@@ -289,7 +289,7 @@ for numCuesEachRing in [ [1] ]:
 trialsStationary = data.TrialHandler(stimListStationary,trialsPerCondition) #constant stimuli method
 trialsMoving = data.TrialHandler(stimListMoving,trialsPerCondition) #constant stimuli method
                                 #        extraInfo= {'subject':subject} )  #will be included in each row of dataframe and wideText. Not working in v1.82.01
-trialHandlerList = [ trialsStationary, trialsMoving ] #To change the order of blocks, change the order in this list
+trialHandlerList = [ trialsMoving, trialsStationary ] #To change the order of blocks, change the order in this list
 #trialHandlerList = [ trialsStationary, trialsMoving ]
 #To do practice trial sets manually then expt making sure its blocked so all stationary or all motion need to have both set to same condition 
 #so either [trialsStationary, trialsStationary] or [trialsMoving, trialsMoving]. alex default was
@@ -312,12 +312,12 @@ logging.info('task='+'track'+'   respType='+respType)
 logging.info(   'radii=' + str(radii)   )
 logging.flush()
 
-RFcontourAmp= 0.0
-RFcontourFreq = 2.0
-RFcontourPhase = 0
-def RFcontourCalcModulation(angle,freq,phase): 
-    modulation = sin(angle*freq + phase) #radial frequency contour equation, e.g. http://www.journalofvision.org/content/14/11/12.full from Wilkinson et al. 1998
-    return modulation
+#RFcontourAmp= 0.0
+#RFcontourFreq = 2.0
+#RFcontourPhase = 0
+#def RFcontourCalcModulation(angle,freq,phase): 
+#    modulation = sin(angle*freq + phase) #radial frequency contour equation, e.g. http://www.journalofvision.org/content/14/11/12.full from Wilkinson et al. 1998
+#    return modulation
 
 #ampTemporalRadiusModulation = 0.0 # 1.0/3.0
 #ampModulatnEachRingTemporalPhase = np.random.rand(numRings) * 2*np.pi
@@ -567,7 +567,7 @@ for trials in trialHandlerList:
         
         numObjects = thisTrial['numObjsEachRing'][0] #haven't implemented additional rings yet
         objsPerQuadrant = numObjects / 4
-        objToCue = np.array([0] )
+        objToCue = np.array([0,1,2,3] )
         randomiseObjToCue = False
         if randomiseObjToCue:
             if numObjects % 4 != 0:

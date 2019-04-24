@@ -43,3 +43,7 @@ Which object number is the target? *lineColor0*
 
 Speed = 0
 
+Decoy condition. 
+* Have cues on in every location
+* Make all disappear except the target's
+
