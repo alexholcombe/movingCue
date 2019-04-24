@@ -333,7 +333,6 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,initialAngle,radius,radialMas
     #CREATING CUE TEXTURE
     #Both inner and outer cue arcs can be drawn in one go via a radial mask
     #use visibleWedge so it only highlights a single thick wedge
-    #draw texture for cueRing
     start = 0 #identify starting texture position for this segment
     start = int( round( start+patchFlankSize ) )
     end = int( round(start + segmentSizeTexture - patchFlankSize) )#don't round until after do addition, otherwise can fall short
@@ -349,13 +348,18 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,initialAngle,radius,radialMas
         visibleAngleEnd = visibleAngleStart + patchAngleThick
         #print('objToCueCorrectdForRingReversal = ',objToCueCorrectdForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
 
+    #decoyRing is optional ring to show a precue around all object positions, to eventually be replaced by a ring around only the target object
+    decoyRing = visual.RadialStim(myWin, tex=cueTex, color=[1,1,1],size=radius, #cueTexInner is white. Only one sector of it shown by mask
+                    ori = initialAngle,
+                    mask = cueRadialMask, radialCycles=0, angularCycles=numObjects,
+                    angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)    
     cueRing = visual.RadialStim(myWin, tex=cueTex, color=[1,1,1],size=radius, #cueTexInner is white. Only one sector of it shown by mask
                     visibleWedge=[visibleAngleStart,visibleAngleEnd],
                     ori = initialAngle,
                     mask = cueRadialMask, radialCycles=0, angularCycles=1, #only one cycle because no pattern actually repeats- trying to highlight only one sector
                     angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
     
-    return ringRadialThickWedges,ringRadialThickWedgesCopy,ringRadialThinWedges,targetRadial,cueRing,lines
+    return ringRadialThickWedges,ringRadialThickWedgesCopy,ringRadialThinWedges,targetRadial,cueRing,lines, decoyRing
     ######### End constructThickThinWedgeRingsTargetAndCue ###########################################################
  ###########################################################  ###########################################################
 
@@ -415,16 +419,19 @@ if __name__ == "__main__": #do self-tests
     print('cueInnerArcDesiredFraction = ',cueInnerArcDesiredFraction, ' actual = ', innerArcCenterPos*1.0/len(cueRadialMask) )
     print('cueOuterArcDesiredFraction = ',cueOuterArcDesiredFraction, ' actual = ', outerArcCenterPos*1.0/len(cueRadialMask) )
     targetAngleOffset = 0; targetRadialOffset = -1
-    thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueRing, lines =  \
+    thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueRing, lines, decoyRing =  \
         constructThickThinWedgeRingsTargetAndCue(myWin,initialAngle,radius,radialMask,radialMaskThinWedge,cueRadialMask,visibleWedge,numObjects,
                             patchAngleThickWedges,patchAngleThickWedges,bgColor,thickWedgeColor,thinWedgeColor,targetAngleOffset,targetRadialOffset,
                             gratingTexPix,cueColor,objToCue,ppLog=logging)
-    
+    decoy = True
     keepGoing = True
     while keepGoing:
         thickWedgesRing.draw()
         thinWedgesRing.draw()
-        cueRing.draw()
+        if decoy:
+            decoyRing.draw()
+        else:
+            cueRing.draw()
         #Draw thin wedges at same time as thick wedges. But when time to draw target, draw over old position of target thin wedge and draw displaced version
         #Now program the cue arcs and the target-displaced ring
         myWin.flip()
@@ -450,6 +457,7 @@ if __name__ == "__main__": #do self-tests
         targetRing.draw() #this is the particular blue patch offset. And drawing the rest in red, so that the undisplaced doesn't show through.
         for line in lines:
             line.draw()
+        cueRing.draw()
         myWin.flip()
         for key in event.getKeys():       #check if pressed abort-type key
               if key in ['escape','q']:

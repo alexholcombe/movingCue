@@ -33,6 +33,7 @@ feedback=True
 exportImages= False #quits after one trial / output image
 screenshot= False; screenshotDone = False;allowGUI = False;waitBlank = False
 trackAllIdenticalColors = True#with tracking, can either use same colors as other task (e.g. 6 blobs but only 3 colors so have to track one of 2) or set all blobs identical color
+decoy = True
 
 seed = int( np.floor( time.time() ) )
 random.seed(seed); np.random.seed(seed) #https://stackoverflow.com/a/48056075/302378
@@ -390,7 +391,7 @@ def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFram
     #print("angleMovePerFrame = ",angleMovePerFrame,"angleMove=",angleMove)
     return angleMove
 
-def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,stimRings,targetRings,lines,offsetXYeachRing):
+def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,decoyCues,stimRings,targetRings,lines,offsetXYeachRing):
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
   n=currFrame
   if n<rampUpFrames:
@@ -426,11 +427,15 @@ def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,stimRings,target
                     
   cueCurrAngle = cues[numRing].ori
   for cue in cues: cue.draw()
-  
+        
   #check whether time to draw target and distractor objects
   timeTargetOnset = thisTrial['cueLeadTime']
-  if thisTrial['speed']>0:
+  if thisTrial['speed']>0: #If motion, that means cue moves for a while and then cueLeadTime starts when cue stops moving
     timeTargetOnset += thisTrial['durMotion']
+    
+  if decoy and n < round(timeTargetOnset*refreshRate): #draw decoys only until cueLeadTime begins
+    decoyCues.draw()
+    
   if n >= round(timeTargetOnset*refreshRate): #draw target and distractor objects
         linesInsteadOfArcTargets = True
         #draw distractor objects
@@ -567,7 +572,7 @@ for trials in trialHandlerList:
         
         numObjects = thisTrial['numObjsEachRing'][0] #haven't implemented additional rings yet
         objsPerQuadrant = numObjects / 4
-        objToCue = np.array([0,1,2,3] )
+        objToCue = np.array([0] )
         randomiseObjToCue = False
         if randomiseObjToCue:
             if numObjects % 4 != 0:
@@ -628,7 +633,7 @@ for trials in trialHandlerList:
         if abs(cueOuterArcDesiredFraction - outerArcActualFraction) > closeEnough:
             print('cueOuterArcDesiredFraction of object radius = ',cueOuterArcDesiredFraction, ' actual = ', outerArcActualFraction, ' exceeding tolerance of ',closeEnough)
         initialAngle = random.random()*360.
-        thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueDoubleRing, lines=  constructThickThinWedgeRingsTargetAndCue(myWin, \
+        thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueDoubleRing, lines, decoyDoubleRing = constructThickThinWedgeRingsTargetAndCue(myWin, \
                 initialAngle,radii[0],radialMask,radialMaskThinWedge,
                 cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,patchAngleThickWedges,
                                 bgColor,thickWedgeColor,thinWedgeColor,0,thisTrial['targetOffset'],gratingTexPix,cueColor,objToCue,ppLog=logging)
@@ -665,7 +670,7 @@ for trials in trialHandlerList:
                     t = stimClock.getTime()
                     currFrame = round(t*refreshRate)
                 else: currFrame = n
-                cueCurrAngle = oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,[cueDoubleRing],[thickWedgesRing,thinWedgesRing],
+                cueCurrAngle = oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,[cueDoubleRing],decoyDoubleRing,[thickWedgesRing,thinWedgesRing],
                                                          [thickWedgesRingCopy,targetRing],lines,offsetXYeachRing) #actual drawing of stimuli
                 lastFrame = currFrame #only used if useClock=True
                 if exportImages:
