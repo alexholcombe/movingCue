@@ -273,7 +273,7 @@ speedsBesidesStationary = np.array([.2])  # np.array([1])   #dont want to go fas
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]:#8 #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
-  for cueLeadTime in [.467]: # [.02, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
+  for cueLeadTime in [.467*3]: # [.02, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
     for durMotionMin in [.45]:   #If speed!=0, how long should cue(s) move before stopping and cueLeadTime clock begins
       durMotion = durMotionMin + random.random()*.2
       for direction in [-1.0,1.0]:
@@ -409,7 +409,7 @@ def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,decoyCues,stimRi
   if thisTrial['speed']:
     cueMovementEndTime += thisTrial['durMotion']
 
-  if n<= cueMovementEndTime*refreshRate: #cue movement interval. Afterwards, cue stationary
+  if n<= cueMovementEndTime*refreshRate: #cue movement interval. Afterwards, cue stationary and cueLeadTime begins
     angleMove = angleChangeThisFrame(thisTrial, moveDirection, numRing, n, lastFrame)
     cues[numRing].setOri(angleMove,operation='+',log=autoLogging)
     decoyCues.setOri(angleMove,operation='+',log=autoLogging)
@@ -421,26 +421,25 @@ def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,decoyCues,stimRi
         y = sin(currLineAngle/180*pi) * eccentricity
         line.setPos( [x,y], log=autoLogging)   
         #line.draw() #shows that it moves wqith the cue
+    if decoy: #draw decoys only until cueLeadTime begins
+      decoyCues.draw()
+      #print('Drew decoy')
     #print("cueMovementEndTime=",cueMovementEndTime,"n=",n,", in sec=",n/refreshRate, "currLineAngle=",currLineAngle, "cues ori=",cues[numRing].ori) 
   if n == cueMovementEndTime*refreshRate:
     if eyetracking:
         tracker.sendMessage('Cue will stop moving with this upcoming frame.')
                     
-        
-  #check whether time to draw target and distractor objects
-  timeTargetOnset = thisTrial['cueLeadTime']
-  if thisTrial['speed']>0: #If motion, that means cue moves for a while and then cueLeadTime starts when cue stops moving
-    timeTargetOnset += thisTrial['durMotion']
-    
-  if decoy and (n < round(timeTargetOnset*refreshRate)): #draw decoys only until cueLeadTime begins
-    decoyCues.draw()
-
   for cue in cues: 
     cue.draw()
   cueCurrAngle = cues[numRing].ori
 
+  #check whether time to draw target and distractor objects
+  timeTargetOnset = thisTrial['cueLeadTime']
+  if thisTrial['speed']>0: #If motion, that means cue moves for a while and then cueLeadTime starts when cue stops moving
+    timeTargetOnset += thisTrial['durMotion']
+
   if n >= round(timeTargetOnset*refreshRate): #draw target and distractor objects
-        print('Drawing ',n-round(timeTargetOnset*refreshRate),'th frame of target')
+        #print('Drawing ',n-round(timeTargetOnset*refreshRate),'th frame of target')
         linesInsteadOfArcTargets = True
         #draw distractor objects
         if not linesInsteadOfArcTargets:
