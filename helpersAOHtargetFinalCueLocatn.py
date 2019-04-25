@@ -192,6 +192,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,initialAngle,radius,radialMas
     #2-D texture which will draw the ring of objects via openGL texture on grating
     ringTex = np.zeros([gratingTexPix,gratingTexPix,3])+bgColor[0]  #start with all channels in all locs = bgColor
     cueTex = np.zeros([gratingTexPix,gratingTexPix,3])+bgColor[0]  #start with all channels in all locs = bgColor
+    decoyTex = np.zeros([gratingTexPix,gratingTexPix,3])+bgColor[0]  #start with all channels in all locs = bgColor
     oneCycleAngle = 360./numCycles
     def patchSizeForTexture(segmentAngle, patchAngle, oneCycleAngle, gratingTexPix):
         segmentSizeTexture = segmentAngle/oneCycleAngle *gratingTexPix #I call it segment because includes spaces between objects, that I'll write over subsequently
@@ -334,11 +335,21 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,initialAngle,radius,radialMas
     #Both inner and outer cue arcs can be drawn in one go via a radial mask
     #use visibleWedge so it only highlights a single thick wedge
     start = 0 #identify starting texture position for this segment
-    start = int( round( start+patchFlankSize ) )
-    end = int( round(start + segmentSizeTexture - patchFlankSize) )#don't round until after do addition, otherwise can fall short
-    cueTex[:, start:end, :] = cueColor[:]
-    #Actually because I'm only showing a tiny sliver via visibleAngle, could color the whole thing
+    #start:end is meant to be entire segment, but the flanks, patchFlank, are drawn in bgColor
+    #But remember this is a texture so maybe the first patchFlankSize portion is meant to be bg
+    start = patchFlankSize
+    end = start + segmentSizeTexture - 2*patchFlankSize
+    start = int( round(start) )
+    end = int( round(end) )
+    decoyTex[:, start:end, :] = cueColor[:]
+    
+    #Because I'm only showing a tiny sliver via visibleAngle, can color the whole thing
     cueTex[:, :, :] = cueColor[:]
+#    start = 0 #identify starting texture position for this segment
+#    start = int( round( start+patchFlankSize ) )
+#    end = int( round(start + segmentSizeTexture - patchFlankSize) )#don't round until after do addition, otherwise can fall short
+#    cueTex[:, start:end, :] = cueColor[:]
+#    cueTex[:, :, :] = cueColor[:]
     
     #draw cue
     visibleAngleStart = 0; visibleAngleEnd=360
@@ -349,7 +360,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,initialAngle,radius,radialMas
         #print('objToCueCorrectdForRingReversal = ',objToCueCorrectdForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
 
     #decoyRing is optional ring to show a precue around all object positions, to eventually be replaced by a ring around only the target object
-    decoyRing = visual.RadialStim(myWin, tex=cueTex, color=[1,1,1],size=radius, #cueTexInner is white. Only one sector of it shown by mask
+    decoyRing = visual.RadialStim(myWin, tex=decoyTex, color=[1,1,1],size=radius, #cueTexInner is white. Only one sector of it shown by mask
                     ori = initialAngle,
                     mask = cueRadialMask, radialCycles=0, angularCycles=numObjects,
                     angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)    
@@ -378,7 +389,7 @@ if __name__ == "__main__": #do self-tests
 
     #Task will be to judge which thick wedge has the thin wedge offset within it
     numObjects = 8
-    initialAngle =random.random()*360
+    initialAngle = 0 #random.random()*360
     gratingTexPix= 1024
     objToCue=0 
     radius = 25.
@@ -414,8 +425,8 @@ if __name__ == "__main__": #do self-tests
     #For the cueRadialMask, want everything zero except just inside and outside of the wedges.
     innerArcCenterPos = int( round( binsNeeded*cueInnerArcDesiredFraction ) )
     outerArcCenterPos = int( round( binsNeeded*cueOuterArcDesiredFraction ) )
-    cueRadialMask[ innerArcCenterPos ] = 1
-    cueRadialMask[ outerArcCenterPos ] = 1
+    cueRadialMask[ innerArcCenterPos-5:innerArcCenterPos+5 ] = 1
+    cueRadialMask[ outerArcCenterPos-1:outerArcCenterPos+1 ] = 1
     print('cueInnerArcDesiredFraction = ',cueInnerArcDesiredFraction, ' actual = ', innerArcCenterPos*1.0/len(cueRadialMask) )
     print('cueOuterArcDesiredFraction = ',cueOuterArcDesiredFraction, ' actual = ', outerArcCenterPos*1.0/len(cueRadialMask) )
     targetAngleOffset = 0; targetRadialOffset = -1
