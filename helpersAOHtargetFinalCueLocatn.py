@@ -355,8 +355,9 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,initialAngle,radius,radialMas
     visibleAngleStart = 0; visibleAngleEnd=360
     if objToCue>=0:
         objToCueCorrectdForRingReversal = objToCue #numObjects-1 - objToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
-        visibleAngleStart = objToCueCorrectdForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2
-        visibleAngleEnd = visibleAngleStart + patchAngleThick
+        kludgeCueThickenToMatchDecoy = 3
+        visibleAngleStart = objToCueCorrectdForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2 - kludgeCueThickenToMatchDecoy
+        visibleAngleEnd = visibleAngleStart + patchAngleThick + kludgeCueThickenToMatchDecoy + 2
         #print('objToCueCorrectdForRingReversal = ',objToCueCorrectdForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
 
     #decoyRing is optional ring to show a precue around all object positions, to eventually be replaced by a ring around only the target object

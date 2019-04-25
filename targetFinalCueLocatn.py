@@ -33,7 +33,6 @@ feedback=True
 exportImages= False #quits after one trial / output image
 screenshot= False; screenshotDone = False;allowGUI = False;waitBlank = False
 trackAllIdenticalColors = True#with tracking, can either use same colors as other task (e.g. 6 blobs but only 3 colors so have to track one of 2) or set all blobs identical color
-decoy = True
 
 seed = int( np.floor( time.time() ) )
 random.seed(seed); np.random.seed(seed) #https://stackoverflow.com/a/48056075/302378
@@ -276,22 +275,22 @@ for numCuesEachRing in [ [1] ]:
   for cueLeadTime in [.467*3]: # [.02, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
     for durMotionMin in [.45]:   #If speed!=0, how long should cue(s) move before stopping and cueLeadTime clock begins
       durMotion = durMotionMin + random.random()*.2
-      for direction in [-1.0,1.0]:
+      for direction in [1.0]: # [-1.0,1.0]:
           for targetOffset in [-1,1]:
             for objToCueQuadrant in [0]: #AHdebug range(4):
-                stimListStationary.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'targetOffset':targetOffset,
+                stimListStationary.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'targetOffset':targetOffset,'decoy':True,
                                             'cueLeadTime':cueLeadTime,'durMotion':durMotion,'speed':0,'objToCueQuadrant':objToCueQuadrant,'direction':direction} )
                 
                 for baseSpeed in speedsBesidesStationary:
-                    speed = baseSpeed + random.random()*.2 #add a random number to the speed so that final position is not predictable
-                    stimListMoving.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'targetOffset':targetOffset,
+                    speed = baseSpeed + random.random()*.1 #add a random number to the speed so that final position is not predictable
+                    stimListMoving.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'targetOffset':targetOffset,'decoy':False,
                                                 'cueLeadTime':cueLeadTime,'durMotion':durMotion,'speed':speed,'objToCueQuadrant':objToCueQuadrant,'direction':direction} )
 #set up record of proportion correct in various conditions
 trialsStationary = data.TrialHandler(stimListStationary,trialsPerCondition) #constant stimuli method
 trialsMoving = data.TrialHandler(stimListMoving,trialsPerCondition) #constant stimuli method
                                 #        extraInfo= {'subject':subject} )  #will be included in each row of dataframe and wideText. Not working in v1.82.01
-trialHandlerList = [ trialsMoving, trialsStationary ] #To change the order of blocks, change the order in this list
-#trialHandlerList = [ trialsStationary, trialsMoving ]
+#trialHandlerList = [ trialsMoving, trialsStationary ] #To change the order of blocks, change the order in this list
+trialHandlerList = [ trialsStationary, trialsMoving ]
 #To do practice trial sets manually then expt making sure its blocked so all stationary or all motion need to have both set to same condition 
 #so either [trialsStationary, trialsStationary] or [trialsMoving, trialsMoving]. alex default was
 # [ trialsStationary, trialsMoving ] and then reduce no trials from 8 to 4 line 105 now 
@@ -406,7 +405,7 @@ def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,decoyCues,stimRi
   numRing = 0 #Haven't implemented capability for multiple rings, although started out that way, got rid of it because complexity
   #draw cue
   cueMovementEndTime = 0
-  if thisTrial['speed']:
+  if thisTrial['speed'] or thisTrial['decoy']:  #durMotion encodes durDecoys if it's a decoy experiment and stationary condition (speed=0)
     cueMovementEndTime += thisTrial['durMotion']
 
   if n<= cueMovementEndTime*refreshRate: #cue movement interval. Afterwards, cue stationary and cueLeadTime begins
@@ -421,7 +420,7 @@ def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,decoyCues,stimRi
         y = sin(currLineAngle/180*pi) * eccentricity
         line.setPos( [x,y], log=autoLogging)   
         #line.draw() #shows that it moves wqith the cue
-    if decoy: #draw decoys only until cueLeadTime begins
+    if thisTrial['decoy']: #draw decoys only until cueLeadTime begins
       decoyCues.draw()
       #print('Drew decoy')
     #print("cueMovementEndTime=",cueMovementEndTime,"n=",n,", in sec=",n/refreshRate, "currLineAngle=",currLineAngle, "cues ori=",cues[numRing].ori) 
@@ -635,7 +634,7 @@ for trials in trialHandlerList:
             print('cueInnerArcDesiredFraction of object radius = ',cueInnerArcDesiredFraction, ' actual = ', innerArcActualFraction, ' exceeding tolerance of ',closeEnough )
         if abs(cueOuterArcDesiredFraction - outerArcActualFraction) > closeEnough:
             print('cueOuterArcDesiredFraction of object radius = ',cueOuterArcDesiredFraction, ' actual = ', outerArcActualFraction, ' exceeding tolerance of ',closeEnough)
-        initialAngle = random.random()*360.
+        initialAngle = 0# random.random()*360.
         thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueDoubleRing, lines, decoyDoubleRing = constructThickThinWedgeRingsTargetAndCue(myWin, \
                 initialAngle,radii[0],radialMask,radialMaskThinWedge,
                 cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,patchAngleThickWedges,

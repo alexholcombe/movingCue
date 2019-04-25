@@ -14,3 +14,12 @@ It looks like it can work by first making sure the cueTex is drawn perfectly so 
 Need to either have different tex for cue ring and decoy ring or need to figure out which angle is visible wedge.  But the cueRing is normally just drawn with one cycle, whereas the decoy ring has numObjects cycles, so they'll never map on. 
 
 Try setting cueRing to numObjects cycles. *Big risk of no longer mapping onto visibleAngle used in previous experiments*, which could screw I-dont-know-what up. Therefore, create a separate decoyTex. Then the only issue should be ensuring that the visible wedge maps directly onto the decoy cue, so that there's no local luminance transient when all the decoys disappear.
+
+I've added kludgeCueThickenToMatchDecoy so that decoy exactly matches the cue.
+
+Setting initialAngle to zero.
+I can't understand how the motion direction is varying.
+How much should durMotion be randomized? 
+
+
+* Need to add an interval as long as the motion to the stationary condition. Or maybe the stationary condition should be the only condition?
