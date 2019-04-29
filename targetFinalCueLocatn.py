@@ -272,7 +272,7 @@ speedsBesidesStationary = np.array([.2])  # np.array([1])   #dont want to go fas
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]:#8 #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
-  for cueLeadTime in [.467]: # [0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
+  for cueLeadTime in [.167]: # [0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
     for durMotionMin in [.45]:   #If speed!=0, how long should cue(s) move before stopping and cueLeadTime clock begins
       durMotion = durMotionMin + random.random()*.2
       for direction in [1.0]: # [-1.0,1.0]:
@@ -289,8 +289,8 @@ for numCuesEachRing in [ [1] ]:
 trialsStationary = data.TrialHandler(stimListStationary,trialsPerCondition) #constant stimuli method
 trialsMoving = data.TrialHandler(stimListMoving,trialsPerCondition) #constant stimuli method
                                 #        extraInfo= {'subject':subject} )  #will be included in each row of dataframe and wideText. Not working in v1.82.01
-#trialHandlerList = [ trialsMoving, trialsStationary ] #To change the order of blocks, change the order in this list
-trialHandlerList = [ trialsStationary, trialsMoving ]
+trialHandlerList = [ trialsMoving, trialsStationary ] #To change the order of blocks, change the order in this list
+#trialHandlerList = [ trialsStationary, trialsMoving ]
 #To do practice trial sets manually then expt making sure its blocked so all stationary or all motion need to have both set to same condition 
 #so either [trialsStationary, trialsStationary] or [trialsMoving, trialsMoving]. alex default was
 # [ trialsStationary, trialsMoving ] and then reduce no trials from 8 to 4 line 105 now 

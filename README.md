@@ -55,3 +55,18 @@ durExtra = thisTrial['durMotion'] if (thisTrial['speed'] or thisTrial['decoy']) 
 
 This is definitely gonna confuse me in the future that trial length linked to trial-by-trial decoy presence
 
+## Making sure everything randomized right
+
+-l.271 np.array[.2]) changed from .2 to 1 as in previous program
+-l.275 cue lead times changed from "467*3" to the actual lead times: 0.02 etc.
+-l.285 factor behind "randon.random()" changed from 1 to 2 (was 2 in previous program)
+-l.637: changed from "0" back to random starting position
+-l.278      for direction in [1.0]: # [-1.0,1.0]:
+Still don't know what's reversing the motion direction.
+
+
+How should practice trials work?
+
+## Expected results
+
+At the minimal delay of .06 you can't hardly even see where the cue is after the decoys disappear, so there will be a delayed liftoff. But then what will this experiment mean, because then it's for certain that there will be a gradual increase. In part I wanted to do this experiment to show that the gradual increase was not due to masking by local transient of the appearance of the cue. But I guess it still means that if the motion condition shows a steeper slope, that's still kind of impressive that offset of motion can do that.
