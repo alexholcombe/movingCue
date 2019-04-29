@@ -18,7 +18,7 @@ Try setting cueRing to numObjects cycles. *Big risk of no longer mapping onto vi
 I've added kludgeCueThickenToMatchDecoy so that decoy exactly matches the cue.
 
 Setting initialAngle to zero.
-I can't understand how the motion direction is varying.
+I can't understand how the motion direction is varying. SOME PHASE MUST BE GETTING RANDOMISED OR SOMETHING
 How much should durMotion be randomized? 
 
 

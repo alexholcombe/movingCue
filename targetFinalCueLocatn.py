@@ -272,7 +272,7 @@ speedsBesidesStationary = np.array([.2])  # np.array([1])   #dont want to go fas
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]:#8 #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
-  for cueLeadTime in [.467*3]: # [.02, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
+  for cueLeadTime in [.467]: # [0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
     for durMotionMin in [.45]:   #If speed!=0, how long should cue(s) move before stopping and cueLeadTime clock begins
       durMotion = durMotionMin + random.random()*.2
       for direction in [1.0]: # [-1.0,1.0]:
@@ -391,7 +391,7 @@ def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFram
     return angleMove
 
 def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,decoyCues,stimRings,targetRings,lines,offsetXYeachRing):
-#defining a function to draw each frame of stim. So can call second time for tracking task response phase
+  #a function to draw each frame of stim. Can potentially call it also during tracking task response phase, if you want to use that type of response.
   n=currFrame
   if n<rampUpFrames:
         contrast = cos( -pi+ pi* n/rampUpFrames  ) /2. +.5 #starting from -pi trough of cos, and scale into 0->1 range
@@ -404,9 +404,12 @@ def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,decoyCues,stimRi
   
   numRing = 0 #Haven't implemented capability for multiple rings, although started out that way, got rid of it because complexity
   #draw cue
+  timeTargetOnset = thisTrial['cueLeadTime']
   cueMovementEndTime = 0
-  if thisTrial['speed'] or thisTrial['decoy']:  #durMotion encodes durDecoys if it's a decoy experiment and stationary condition (speed=0)
+  if thisTrial['speed']>0 or thisTrial['decoy']:  #durMotion encodes durDecoys if it's a decoy experiment and it's the stationary condition (speed=0)
     cueMovementEndTime += thisTrial['durMotion']
+    #If motion, that means cue moves for a while and then cueLeadTime starts when cue stops moving. Decoy needs foreperiod matched to that.
+    timeTargetOnset += thisTrial['durMotion']
 
   if n<= cueMovementEndTime*refreshRate: #cue movement interval. Afterwards, cue stationary and cueLeadTime begins
     angleMove = angleChangeThisFrame(thisTrial, moveDirection, numRing, n, lastFrame)
@@ -431,11 +434,9 @@ def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,decoyCues,stimRi
   for cue in cues: 
     cue.draw()
   cueCurrAngle = cues[numRing].ori
+  #print('Frame = ',n) #AHdebug
 
   #check whether time to draw target and distractor objects
-  timeTargetOnset = thisTrial['cueLeadTime']
-  if thisTrial['speed']>0: #If motion, that means cue moves for a while and then cueLeadTime starts when cue stops moving
-    timeTargetOnset += thisTrial['durMotion']
 
   if n >= round(timeTargetOnset*refreshRate): #draw target and distractor objects
         #print('Drawing ',n-round(timeTargetOnset*refreshRate),'th frame of target')
@@ -589,7 +590,7 @@ for trials in trialHandlerList:
         isReversed= list([1]) * numRings #always takes values of -1 or 1
         reversalNumEachRing = list([0]) * numRings
         moveDirection = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction
-        durExtra = thisTrial['durMotion'] if thisTrial['speed'] else 0 #in motion condition, cue moves for awhile before cue lead time clock starts
+        durExtra = thisTrial['durMotion'] if (thisTrial['speed'] or thisTrial['decoy']) else 0 #in motion condition, cue moves for awhile before cue lead time clock starts. Decoy has to be matched
         maskBegin = thisTrial['cueLeadTime'] + targetDur + durExtra
         trialDurTotal = maskBegin + maskDur
         trialDurFrames= int( trialDurTotal*refreshRate )

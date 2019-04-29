@@ -47,3 +47,11 @@ Decoy condition.
 * Have cues on in every location
 * Make all disappear except the target's
 
+Check timing
+
+#durMotion encodes durDecoys if it's a decoy experiment and it's the stationary condition (speed=0)
+
+durExtra = thisTrial['durMotion'] if (thisTrial['speed'] or thisTrial['decoy']) else 0 #in motion condition, cue moves for awhile before cue lead time clock starts. Decoy has to be matched
+
+This is definitely gonna confuse me in the future that trial length linked to trial-by-trial decoy presence
+
