@@ -590,6 +590,7 @@ for trials in trialHandlerList:
         isReversed= list([1]) * numRings #always takes values of -1 or 1
         reversalNumEachRing = list([0]) * numRings
         moveDirection = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction
+        moveDirection[0] = 1 #always make the 0th ring have the same motion as 'direction' - it gets multiplied by thisTrial['direction']
         durExtra = thisTrial['durMotion'] if (thisTrial['speed'] or thisTrial['decoy']) else 0 #in motion condition, cue moves for awhile before cue lead time clock starts. Decoy has to be matched
         maskBegin = thisTrial['cueLeadTime'] + targetDur + durExtra
         trialDurTotal = maskBegin + maskDur
