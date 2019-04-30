@@ -276,7 +276,7 @@ speedsBesidesStationary = np.array([.2])  # np.array([1])   #dont want to go fas
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]:#8 #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
-  for cueLeadTime in [.145]: # [0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
+  for cueLeadTime in [0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
     for durMotionMin in [.4]:   #If speed!=0, how long should cue(s) move before stopping and cueLeadTime clock begins
       durMotion = durMotionMin + random.random()*1.4
       for direction in [-1.0,1.0]:
