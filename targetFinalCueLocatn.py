@@ -286,20 +286,20 @@ for numCuesEachRing in [ [1] ]:
                                             'cueLeadTime':cueLeadTime,'durMotion':durMotion,'speed':0,'objToCueQuadrant':objToCueQuadrant,'direction':direction} )
                 
                 for baseSpeed in speedsBesidesStationary:
-                    speed = baseSpeed + random.random()*.1 #add a random number to the speed so that final position is not predictable
+                    speed = baseSpeed + random.random()*.15 #add a random number to the speed so that final position is not predictable
                     stimListMoving.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'targetOffset':targetOffset,'decoy':False,
                                                 'cueLeadTime':cueLeadTime,'durMotion':durMotion,'speed':speed,'objToCueQuadrant':objToCueQuadrant,'direction':direction} )
 #set up record of proportion correct in various conditions
 trialsStationary = data.TrialHandler(stimListStationary,trialsPerCondition) #constant stimuli method
 trialsMoving = data.TrialHandler(stimListMoving,trialsPerCondition) #constant stimuli method
                                 #        extraInfo= {'subject':subject} )  #will be included in each row of dataframe and wideText. Not working in v1.82.01
-#trialHandlerList = [ trialsMoving, trialsStationary ] #To change the order of blocks, change the order in this list
-trialHandlerList = [ trialsStationary, trialsMoving ]
+trialHandlerList = [ trialsMoving, trialsStationary ] #To change the order of blocks, change the order in this list
+#trialHandlerList = [ trialsStationary, trialsMoving ]
 #To do practice trial sets manually then expt making sure its blocked so all stationary or all motion need to have both set to same condition 
 #so either [trialsStationary, trialsStationary] or [trialsMoving, trialsMoving]. alex default was
 # [ trialsStationary, trialsMoving ] and then reduce no trials from 8 to 4 line 105 now 
 #doesn't work causes it to freeze. need another way of having it only give either moving or stationary
-#random.shuffle(trialHandlerList) #this randomises which one comes first
+random.shuffle(trialHandlerList) #this randomises which one comes first
 
 numRightWrongEachSpeed = np.zeros([ len(speedsBesidesStationary)+1, 2 ]); #summary results to print out at end
 #end setup of record of proportion correct in various conditions
@@ -643,7 +643,7 @@ for trials in trialHandlerList:
             print('cueInnerArcDesiredFraction of object radius = ',cueInnerArcDesiredFraction, ' actual = ', innerArcActualFraction, ' exceeding tolerance of ',closeEnough )
         if abs(cueOuterArcDesiredFraction - outerArcActualFraction) > closeEnough:
             print('cueOuterArcDesiredFraction of object radius = ',cueOuterArcDesiredFraction, ' actual = ', outerArcActualFraction, ' exceeding tolerance of ',closeEnough)
-        initialAngle = 0# random.random()*360.
+        initialAngle = random.random()*360.
         thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueDoubleRing, lines, decoyDoubleRing = constructThickThinWedgeRingsTargetAndCue(myWin, \
                 initialAngle,radii[0],radialMask,radialMaskThinWedge,
                 cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,patchAngleThickWedges,

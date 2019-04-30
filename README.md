@@ -60,12 +60,16 @@ This is definitely gonna confuse me in the future that trial length linked to tr
 -l.271 np.array[.2]) changed from .2 to 1 as in previous program
 -l.275 cue lead times changed from "467*3" to the actual lead times: 0.02 etc.
 -l.285 factor behind "randon.random()" changed from 1 to 2 (was 2 in previous program)
--l.637: changed from "0" back to random starting position
+-l.646: changed from "0" back to random starting position
 -l.278      for direction in [1.0]: # [-1.0,1.0]:
-Still don't know what's reversing the motion direction.
+-l.302 random.shuffle(trialHandlerList) #this randomises which one comes first
 
         thickWedgeColor = [.7,.7,.7]  
         thinWedgeColor=  [-.7,-.7,-.7] 
+
+Could randomize obj to cue with         randomiseObjToCue = False
+But then would have to combine that with randomization over narrow range of the orientation of the whole thing. Probably simpler is to have objToCue always equal 0 and objToCue constant.
+
 
 How should practice trials work?
 
