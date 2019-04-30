@@ -64,9 +64,20 @@ This is definitely gonna confuse me in the future that trial length linked to tr
 -l.278      for direction in [1.0]: # [-1.0,1.0]:
 Still don't know what's reversing the motion direction.
 
+        thickWedgeColor = [.7,.7,.7]  
+        thinWedgeColor=  [-.7,-.7,-.7] 
 
 How should practice trials work?
 
 ## Expected results
 
 At the minimal delay of .06 you can't hardly even see where the cue is after the decoys disappear, so there will be a delayed liftoff. But then what will this experiment mean, because then it's for certain that there will be a gradual increase. In part I wanted to do this experiment to show that the gradual increase was not due to masking by local transient of the appearance of the cue. But I guess it still means that if the motion condition shows a steeper slope, that's still kind of impressive that offset of motion can do that.
+
+## Trying both a premask and a postmark
+
+I seem to be near chance with these parameters:
+        thickWedgeColor = [.85,.85,.85]  
+        thinWedgeColor=  [-.75,-.75,-.75] 
+cueLeadTime = .04
+
+I think the motion condition may be easier because you can get your attention to more easily include the region inside the cue.

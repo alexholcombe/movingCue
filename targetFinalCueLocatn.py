@@ -43,7 +43,7 @@ timeAndDateStr = time.strftime("%d%b%Y_%H-%M", time.localtime())
 respTypes=['order']; respType=respTypes[0]
 bindRadiallyRingToIdentify=1 #0 is inner, 1 is outer
 gratingTexPix=1024#numpy textures must be a power of 2. So, if numColorsRoundTheRing not divide without remainder into textPix, there will be some rounding so patches will not all be same size
-
+premask = False
 numRings=2
 radii=[25]   #Need to encode as array for those experiments wherein more than one ring presented 
 
@@ -71,7 +71,7 @@ refreshRate = infoFirst['Screen refresh rate']
 
 if demo: refreshRate = 85. 
 tokenChosenEachRing= [-999]*numRings
-targetDur =  1/refreshRate * 2 # 2 #duration of target  (in seconds) but staircased in practice 32, 8, 2 1st condition and 8,2 second
+targetDur =  1/refreshRate * 2 # 2 #duration of target  (in seconds) but staircased in practice 
 targetDur = round(targetDur * refreshRate) / refreshRate #discretize to nearest integer number of refreshes
 rampUpDur=0
 rampUpFrames = refreshRate*rampUpDur
@@ -80,8 +80,6 @@ mouseChoiceArea = ballStdDev*0.8 # origin =1.3
 units='deg' #'cm'
 timeTillReversalMin = 0.5 #0.5; 
 timeTillReversalMax = 1.5# 1.3 #2.9
-colors_all = np.array([[1,-1,-1],[1,-1,-1]])
-cueColor = np.array([1,1,1])
 #monitor parameters
 widthPix = 1024 #1440  #monitor width in pixels
 heightPix = 768  #900 #monitor height in pixels
@@ -251,16 +249,22 @@ fixationCounterphase.setPos([0,0])
 #create noise post-mask
 maskDur = 0.5 
 individualMaskDurFrames = 5
-numChecksAcross = 128
+numChecksAcross = 128 #128
 nearestPowerOfTwo = 2**round( log(numChecksAcross,2) ) #Because textures (created on next line) must be a power of 2
 noiseMasks = []
 numNoiseMasks = int(          ceil(maskDur / ((1/refreshRate)*individualMaskDurFrames))                    )
+maskToSpareFixatn = np.ones((19,19)) #needed if doing premask because will happen at same time that fixation is on
+maskToSpareFixatn[9,9] = -1 #Draw everywhere except inner, to continue to show fixation point
 for i in range(numNoiseMasks): #in python3 xrange was changed to range
     whiteNoiseTexture = np.round( np.random.rand(nearestPowerOfTwo,nearestPowerOfTwo) ,0 )   *2.0-1 #Can counterphase flicker  noise texture to create salient flicker if you break fixation
-    noiseMask= visual.PatchStim(myWin, tex=whiteNoiseTexture, 
-        size=(widthPix,heightPix*.9),pos=[0,heightPix*.05], units='pix', interpolate=False, autoLog=autoLogging)
+    noiseMask= visual.PatchStim(myWin, tex=whiteNoiseTexture,
+        size=(widthPix,heightPix*.9),pos=[0,heightPix*.05], units='pix', interpolate=False, autoLog=autoLogging) #patchStim is deprecated but used in previous experiments
+    if premask:
+        noiseMask= visual.GratingStim(myWin, units='pix', tex=whiteNoiseTexture, mask = maskToSpareFixatn, size=(heightPix*.9,heightPix*.9),
+                        sf = None)  #only one cycle because no pattern actually repeats
+                        #angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
     noiseMasks.append(noiseMask)
-
+        
 respText = visual.TextStim(myWin,pos=(0, -.8),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 NextText = visual.TextStim(myWin,pos=(0, 0),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',color= (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
@@ -272,10 +276,10 @@ speedsBesidesStationary = np.array([.2])  # np.array([1])   #dont want to go fas
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]:#8 #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
-  for cueLeadTime in [.167]: # [0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
-    for durMotionMin in [.45]:   #If speed!=0, how long should cue(s) move before stopping and cueLeadTime clock begins
-      durMotion = durMotionMin + random.random()*.2
-      for direction in [1.0]: # [-1.0,1.0]:
+  for cueLeadTime in [.145]: # [0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
+    for durMotionMin in [.4]:   #If speed!=0, how long should cue(s) move before stopping and cueLeadTime clock begins
+      durMotion = durMotionMin + random.random()*1.4
+      for direction in [-1.0,1.0]:
           for targetOffset in [-1,1]:
             for objToCueQuadrant in [0]: #AHdebug range(4):
                 stimListStationary.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'targetOffset':targetOffset,'decoy':True,
@@ -289,8 +293,8 @@ for numCuesEachRing in [ [1] ]:
 trialsStationary = data.TrialHandler(stimListStationary,trialsPerCondition) #constant stimuli method
 trialsMoving = data.TrialHandler(stimListMoving,trialsPerCondition) #constant stimuli method
                                 #        extraInfo= {'subject':subject} )  #will be included in each row of dataframe and wideText. Not working in v1.82.01
-trialHandlerList = [ trialsMoving, trialsStationary ] #To change the order of blocks, change the order in this list
-#trialHandlerList = [ trialsStationary, trialsMoving ]
+#trialHandlerList = [ trialsMoving, trialsStationary ] #To change the order of blocks, change the order in this list
+trialHandlerList = [ trialsStationary, trialsMoving ]
 #To do practice trial sets manually then expt making sure its blocked so all stationary or all motion need to have both set to same condition 
 #so either [trialsStationary, trialsStationary] or [trialsMoving, trialsMoving]. alex default was
 # [ trialsStationary, trialsMoving ] and then reduce no trials from 8 to 4 line 105 now 
@@ -430,14 +434,17 @@ def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,decoyCues,stimRi
   if n == cueMovementEndTime*refreshRate:
     if eyetracking:
         tracker.sendMessage('Cue will stop moving with this upcoming frame.')
-                    
+
+  if premask and n < round(timeTargetOnset*refreshRate):
+    whichMask = 0 #static mask
+    noiseMasks[ int(whichMask) ].draw()
+    
   for cue in cues: 
     cue.draw()
   cueCurrAngle = cues[numRing].ori
   #print('Frame = ',n) #AHdebug
-
-  #check whether time to draw target and distractor objects
-
+    
+  #check whether time to draw target (and distractors) 
   if n >= round(timeTargetOnset*refreshRate): #draw target and distractor objects
         #print('Drawing ',n-round(timeTargetOnset*refreshRate),'th frame of target')
         linesInsteadOfArcTargets = True
@@ -535,7 +542,7 @@ for trials in trialHandlerList:
         
         waitForKeyPressBetweenTrials = False
         if trialNum< trials.nTotal:
-            pctTrialsCompletedForBreak = np.array([0,.5,.8])  
+            pctTrialsCompletedForBreak = np.array([.5,.8])  
             breakTrials = np.round(trials.nTotal*pctTrialsCompletedForBreak)
             timeForTrialsRemainingMsg = np.any(trialNum==breakTrials)
             pctDone = round(    (1.0*trialNum) / (1.0*trials.nTotal)*100,  0  )
@@ -596,16 +603,16 @@ for trials in trialHandlerList:
         trialDurTotal = maskBegin + maskDur
         trialDurFrames= int( trialDurTotal*refreshRate )
         
-        #Task will be to judge which thick wedge has the thin wedge offset within it
+        #Task will be to judge which thick wedge has the thin wedge offset within it, or now whether target bright or dark
         
         #Set up parameters to construct the thick (context),thin (target offset relative to context) wedges
         gratingTexPix= 1024
         visibleWedge = [0,360]
         patchAngleThickWedges = 22# 360/numObjects/2   #angular subtense of the circle of the cue (and objects if they are arcs)
-        thickWedgeColor = [1,1,1]  # originally [0,-1,-1] #dark red
-        thinWedgeColor=  [-1,-1,-1] #originally [0,0,1] #blue
+        thickWedgeColor = [.85,.85,.85]  
+        thinWedgeColor=  [-.75,-.75,-.75] 
         cueColor=[1,-.9,-.9] #
-        radialMask =   np.array( [0,0,0,0,1,0,0,0,0] ) # [0,0,0,0,0,0,0,1,0,0,0] )
+        radialMask = np.array( [0,0,0,0,1,0,0,0,0] ) # [0,0,0,0,0,0,0,1,0,0,0] )
         #This is the sliver that's offset relative to the larger wedge, that you have to judge the offset of
         radialMaskThinWedge =   np.array( [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] ) 
         wedgeRadiusFraction = np.where(radialMask)[0][0]*1.0 / len(radialMask)
@@ -660,6 +667,8 @@ for trials in trialHandlerList:
                 fixation.draw()
             else: fixationCounterphase.draw()
             fixationPoint.draw()
+            if premask:
+                noiseMasks[0].draw() #premask
             myWin.flip() #clearBuffer=True)
         trialClock.reset()
         t0=trialClock.getTime(); t=trialClock.getTime()-t0
