@@ -48,10 +48,10 @@ numRings=2
 radii=[25]   #Need to encode as array for those experiments wherein more than one ring presented 
 
 respRadius=radii[0] #deg
-refreshRate= 60 #85 #set to the framerate of the monitor
+refreshRate= 85 #85 #set to the framerate of the monitor
 useClock = False #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=False; #show in small window (0) or full screen (1) 
-scrn=0 #which screen to display the stimuli. 0 is home screen, 1 is second screen
+fullscr=True; #show in small window (0) or full screen (1) 
+scrn=0 #which screen to display the stimuli. 0 is home screen, 1 is second screen (cv: sometimes the other way around)
 # create a dialog from dictionary 
 infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':False, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
@@ -93,11 +93,11 @@ if exportImages:
     widthPix = 600; heightPix = 450
     monitorwidth = 25.0
 if demo:    
-    scrn=0; fullscr=0
-    widthPix = 800; heightPix = 600
+    scrn=0; fullscr=1
+    widthPix = 1024; heightPix = 768
     monitorname='testMonitor'
     allowGUI = True
-    monitorwidth = 23#18.0
+    monitorwidth = 40.5#18.0
 
 mon = monitors.Monitor(monitorname,width=monitorwidth, distance=viewdist)#fetch the most recent calib for this monitor
 mon.setSizePix( (widthPix,heightPix) )
@@ -272,13 +272,13 @@ NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color
 NextRemindCountText.setText( ' ' )
 
 stimListStationary = []; stimListMoving = []
-speedsBesidesStationary = np.array([.2])  # np.array([1])   #dont want to go faster than 2 rps because of blur problem
+speedsBesidesStationary = np.array([1])  # np.array([1])   #dont want to go faster than 2 rps because of blur problem
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]:#8 #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
   for cueLeadTime in [0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
     for durMotionMin in [.4]:   #If speed!=0, how long should cue(s) move before stopping and cueLeadTime clock begins
-      durMotion = durMotionMin + random.random()*1.4
+      durMotion = durMotionMin + random.random()*1.1
       for direction in [-1.0,1.0]:
           for targetOffset in [-1,1]:
             for objToCueQuadrant in [0]: #AHdebug range(4):
